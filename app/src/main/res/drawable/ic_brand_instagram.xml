@@ -1,0 +1,22 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Instagram Vibrant Magenta Circle Background -->
+    <path
+        android:fillColor="#C13584"
+        android:pathData="M12,2A10,10 0,1,0 22,12A10,10 0,0,0 12,2Z"/>
+    <!-- Camera Body Outline -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,7c1.6,0 1.8,0 2.5,0 1.9,0.1 2.8,1 2.9,2.9 0,0.6 0,0.8 0,2.5s0,1.8 0,2.5c-0.1,1.9 -1,2.8 -2.9,2.9 -0.6,0 -0.8,0 -2.5,0s-1.8,0 -2.5,0c-1.9,-0.1 -2.8,-1 -2.9,-2.9 0,-0.6 0,-0.8 0,-2.5s0,-1.8 0,-2.5c0.1,-1.9 1,-2.8 2.9,-2.9C10.2,7 10.4,7 12,7m0,-1.3c-1.7,0 -1.9,0 -2.6,0 -2.6,0.1 -4,1.5 -4.1,4.1 0,0.7 0,0.9 0,2.6s0,1.9 0,2.6c0.1,2.6 1.5,4 4.1,4.1 0.7,0 0.9,0 2.6,0s1.9,0 2.6,0c2.6,-0.1 4,-1.5 4.1,-4.1 0,-0.7 0,-0.9 0,-2.6s0,-1.9 0,-2.6c-0.1,-2.6 -1.5,-4 -4.1,-4.1 -0.7,0 -0.9,0 -2.6,0z"/>
+    <!-- Center Lens -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,9.3A2.7,2.7 0,1,0 14.7,12,2.7,2.7 0,0,0 12,9.3zm0,4.1A1.4,1.4 0,1,1 13.4,12,1.4,1.4 0,0,1 12,13.4z"/>
+    <!-- Flash Dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M15.5,9.1A0.6,0.6 0,1,0 16.1,8.5,0.6,0.6 0,0,0 15.5,9.1z"/>
+</vector>

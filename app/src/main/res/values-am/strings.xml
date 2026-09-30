@@ -1,0 +1,72 @@
+<resources>
+    <string name="app_name">Adere</string>
+    <string name="app_tagline">የይለፍ ቃሎች እና ሚስጥሮች ደህንነቱ የተጠበቀ ካዝና</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">መነሻ</string>
+    <string name="nav_vault">ካዝና</string>
+    <string name="nav_generator">አመንጪ</string>
+    <string name="nav_security">ደህንነት</string>
+    <string name="nav_settings">ቅንብሮች</string>
+
+    <!-- Categories -->
+    <string name="category_all">ሁሉም</string>
+    <string name="category_favorites">ተወዳጆች</string>
+    <string name="category_social">ማህበራዊ ሚዲያ</string>
+    <string name="category_email">ኢሜይል</string>
+    <string name="category_banking">ባንክ</string>
+    <string name="category_crypto">ክሪፕቶ ካዝና</string>
+    <string name="category_websites">ድረ-ገጾች</string>
+    <string name="category_wifi">ዋይፋይ</string>
+    <string name="category_identity">መለያ</string>
+    <string name="category_notes">ማስታወሻዎች</string>
+    <string name="category_2fa">2FA / TOTP</string>
+    <string name="category_recovery">የመልሶ ማግኛ ኮዶች</string>
+    <string name="category_other">ሌሎች</string>
+
+    <!-- Dashboard & Vault -->
+    <string name="vault_status_protected">ካዝናዎ የተጠበቀ ነው</string>
+    <string name="vault_status_locked">ካዝናው ተቆልፏል</string>
+    <string name="total_items">ጠቅላላ ንጥሎች</string>
+    <string name="weak_passwords">ደካማ</string>
+    <string name="reused_passwords">የተደገሙ</string>
+    <string name="old_passwords">ያረጁ</string>
+    <string name="quick_actions">ፈጣን እርምጃዎች</string>
+    <string name="recent_items">የቅርብ ጊዜ ንጥሎች</string>
+    <string name="search_vault_hint">ርዕስ፣ የተጠቃሚ ስም፣ ምድብ ይፈልጉ…</string>
+    <string name="empty_vault_title">ካዝናዎ ባዶ ነው</string>
+    <string name="empty_vault_desc">የመጀመሪያውን ሚስጥር ወይም የይለፍ ቃል እዚህ ያስቀምጡ።</string>
+
+    <!-- Actions -->
+    <string name="action_add">አዲስ አክል</string>
+    <string name="action_save">አስቀምጥ</string>
+    <string name="action_cancel">ሰርዝ</string>
+    <string name="action_edit">አስተካክል</string>
+    <string name="action_delete">አጥፋ</string>
+    <string name="action_copy">ቅዳ</string>
+    <string name="action_reveal">አሳይ</string>
+    <string name="action_hide">ደብቅ</string>
+    <string name="action_lock_now">አሁን ቆልፍ</string>
+    <string name="action_unlock">ካዝናውን ክፈት</string>
+    <string name="action_generate">አመንጭ</string>
+    <string name="action_favorite">ወደ ተወዳጅ አክል</string>
+    <string name="action_unfavorite">ከተወዳጅ አስወግድ</string>
+
+    <!-- Authentication & Security -->
+    <string name="master_password">ዋና ይለፍ ቃል</string>
+    <string name="confirm_master_password">ዋና ይለፍ ቃል አረጋግጥ</string>
+    <string name="enter_master_password">ዋና ይለፍ ቃል ያስገቡ</string>
+    <string name="biometric_prompt_title">Adere ን ይክፈቱ</string>
+    <string name="biometric_prompt_subtitle">ካዝናውን ለመክፈት የጣት አሻራዎን ያረጋግጡ</string>
+    <string name="biometric_use_password">በይለፍ ቃል ክፈት</string>
+    <string name="security_health_title">የደህንነት ሁኔታ</string>
+    <string name="security_health_strong">ጠንካራ ደህንነት</string>
+    <string name="security_health_warning">ትኩረት ያስፈልገዋል</string>
+    <string name="clipboard_copied">ተቀድቷል፤ በቅርቡ በራስ-ሰር ይሰረዛል።</string>
+
+    <!-- Warnings -->
+    <string name="warning_seed_phrase">የመልሶ ማግኛ ቃላትን ለማንም አያጋሩ።</string>
+    <string name="warning_private_key">ሚስጥራዊ ቁልፎችን አስፈላጊ ሲሆን ብቻ ያሳዩ።</string>
+    <string name="warning_bank_account">የባንክ ፒን ቁጥሮችን በጥንቃቄ ያስቀምጡ።</string>
+    <string name="warning_backup">የመጠባበቂያ ይለፍ ቃልዎን በጥንቃቄ ይያዙ።</string>
+</resources>

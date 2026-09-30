@@ -1,0 +1,72 @@
+<resources>
+    <string name="app_name">Adere</string>
+    <string name="app_tagline">Your private vault for passwords, accounts, and digital secrets.</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_vault">Vault</string>
+    <string name="nav_generator">Generator</string>
+    <string name="nav_security">Security</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Categories -->
+    <string name="category_all">All Items</string>
+    <string name="category_favorites">Favorites</string>
+    <string name="category_social">Social Media</string>
+    <string name="category_email">Email</string>
+    <string name="category_banking">Banking</string>
+    <string name="category_crypto">Crypto Vault</string>
+    <string name="category_websites">Websites</string>
+    <string name="category_wifi">Wi-Fi</string>
+    <string name="category_identity">Identity</string>
+    <string name="category_notes">Secure Notes</string>
+    <string name="category_2fa">2FA / TOTP</string>
+    <string name="category_recovery">Recovery Codes</string>
+    <string name="category_other">Other</string>
+
+    <!-- Dashboard & Vault -->
+    <string name="vault_status_protected">Your vault is protected</string>
+    <string name="vault_status_locked">Vault Locked</string>
+    <string name="total_items">Total Items</string>
+    <string name="weak_passwords">Weak</string>
+    <string name="reused_passwords">Reused</string>
+    <string name="old_passwords">Old</string>
+    <string name="quick_actions">Quick Actions</string>
+    <string name="recent_items">Recent Items</string>
+    <string name="search_vault_hint">Search title, username, category…</string>
+    <string name="empty_vault_title">Your vault is empty</string>
+    <string name="empty_vault_desc">Add your first secure account, password or crypto wallet.</string>
+
+    <!-- Actions -->
+    <string name="action_add">Add Item</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_copy">Copy</string>
+    <string name="action_reveal">Reveal</string>
+    <string name="action_hide">Hide</string>
+    <string name="action_lock_now">Lock Now</string>
+    <string name="action_unlock">Unlock Vault</string>
+    <string name="action_generate">Generate</string>
+    <string name="action_favorite">Favorite</string>
+    <string name="action_unfavorite">Unfavorite</string>
+
+    <!-- Authentication & Security -->
+    <string name="master_password">Master Password</string>
+    <string name="confirm_master_password">Confirm Master Password</string>
+    <string name="enter_master_password">Enter Master Password</string>
+    <string name="biometric_prompt_title">Unlock Adere</string>
+    <string name="biometric_prompt_subtitle">Confirm your biometric to access your encrypted vault</string>
+    <string name="biometric_use_password">Use Master Password</string>
+    <string name="security_health_title">Security Health</string>
+    <string name="security_health_strong">Strong Security</string>
+    <string name="security_health_warning">Needs Attention</string>
+    <string name="clipboard_copied">Copied to clipboard. Will auto-clear shortly.</string>
+
+    <!-- Warnings -->
+    <string name="warning_seed_phrase">Never share your recovery phrase. Anyone with it controls your assets.</string>
+    <string name="warning_private_key">Private keys provide irreversible control. Reveal only when necessary.</string>
+    <string name="warning_bank_account">Never store sensitive banking PINs unless you understand the physical security of your device.</string>
+    <string name="warning_backup">Keep your backup password safe. If lost, encrypted backups cannot be recovered.</string>
+</resources>

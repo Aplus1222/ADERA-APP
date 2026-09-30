@@ -1,0 +1,6 @@
+{
+  "name": "Adere — Password & Secret Manager",
+  "description": "Offline-first encrypted vault for passwords, accounts, seed phrases, private keys, TOTP 2FA, and digital secrets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

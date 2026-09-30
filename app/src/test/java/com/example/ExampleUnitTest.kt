@@ -1,0 +1,234 @@
+package com.example
+
+import com.example.adere.core.backup.BackupManager
+import com.example.adere.core.crypto.CryptoEngine
+import com.example.adere.core.crypto.PasswordGenerator
+import com.example.adere.core.crypto.PasswordHealthAnalyzer
+import com.example.adere.core.crypto.TOTPGenerator
+import com.example.adere.domain.model.VaultCategory
+import com.example.adere.domain.model.VaultItem
+import com.example.adere.domain.model.VaultItemPayload
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import java.util.UUID
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [36])
+class ExampleUnitTest {
+
+    @Test
+    fun testAesGcmEncryptionDecryptionRoundTrip() {
+        val testDek = CryptoEngine.generateDek()
+        val originalPlaintext = "SuperSecretAderePassword!2026#Vault"
+
+        val encrypted = CryptoEngine.encryptString(originalPlaintext, testDek)
+        assertNotNull(encrypted.ciphertext)
+        assertNotNull(encrypted.iv)
+        assertEquals(CryptoEngine.GCM_IV_SIZE_BYTES, encrypted.iv.size)
+
+        val decrypted = CryptoEngine.decryptString(encrypted.ciphertext, encrypted.iv, testDek)
+        assertEquals(originalPlaintext, decrypted)
+    }
+
+    @Test(expected = Exception::class)
+    fun testAesGcmCorruptedCiphertextFails() {
+        val testDek = CryptoEngine.generateDek()
+        val original = "SensitiveSeedPhrase"
+        val encrypted = CryptoEngine.encryptString(original, testDek)
+
+        // Tamper with the ciphertext
+        val corruptedCiphertext = encrypted.ciphertext.copyOf()
+        corruptedCiphertext[0] = (corruptedCiphertext[0].toInt() xor 0xFF).toByte()
+
+        // Should throw AEADBadTagException / GeneralSecurityException
+        CryptoEngine.decryptString(corruptedCiphertext, encrypted.iv, testDek)
+    }
+
+    @Test
+    fun testDifferentIvsProducedForIdenticalPlaintext() {
+        val testDek = CryptoEngine.generateDek()
+        val text = "ConstantPlaintext"
+
+        val enc1 = CryptoEngine.encryptString(text, testDek)
+        val enc2 = CryptoEngine.encryptString(text, testDek)
+
+        assertFalse(enc1.iv.contentEquals(enc2.iv))
+        assertFalse(enc1.ciphertext.contentEquals(enc2.ciphertext))
+    }
+
+    @Test
+    fun testPbkdf2KeyDerivation() {
+        val salt = CryptoEngine.generateSalt()
+        val pass = "AdereMasterPassword2026!".toCharArray()
+
+        val key1 = CryptoEngine.deriveKey(pass, salt, iterations = 10_000)
+        val key2 = CryptoEngine.deriveKey(pass, salt, iterations = 10_000)
+
+        assertTrue(key1.encoded.contentEquals(key2.encoded))
+
+        // Different salt yields different key
+        val salt2 = CryptoEngine.generateSalt()
+        val key3 = CryptoEngine.deriveKey(pass, salt2, iterations = 10_000)
+        assertFalse(key1.encoded.contentEquals(key3.encoded))
+    }
+
+    @Test
+    fun testPasswordGeneratorOptionsAndEntropy() {
+        val options = PasswordGenerator.GeneratorOptions(
+            length = 24,
+            includeUppercase = true,
+            includeLowercase = true,
+            includeDigits = true,
+            includeSymbols = true,
+            excludeAmbiguous = true
+        )
+
+        val result = PasswordGenerator.generate(options)
+        assertEquals(24, result.password.length)
+        assertTrue(result.password.any { it.isUpperCase() })
+        assertTrue(result.password.any { it.isLowerCase() })
+        assertTrue(result.password.any { it.isDigit() })
+        assertTrue(result.entropyBits > 80.0)
+        assertEquals(PasswordGenerator.PasswordStrength.VERY_STRONG, result.strength)
+    }
+
+    @Test
+    fun testPasswordGeneratorPassphraseMode() {
+        val options = PasswordGenerator.GeneratorOptions(
+            isPassphraseMode = true,
+            passphraseWordCount = 4,
+            passphraseSeparator = "-"
+        )
+        val result = PasswordGenerator.generate(options)
+        assertTrue(result.password.contains("-"))
+        assertTrue(result.password.length >= 16)
+    }
+
+    @Test
+    fun testTotpGenerationAndBase32Decoding() {
+        // Standard RFC 4226 / 6238 Base32 test vector
+        val secret = "JBSWY3DPEHPK3PXP"
+        val decoded = TOTPGenerator.decodeBase32(secret)
+        assertNotNull(decoded)
+        assertEquals("Hello", String(decoded!!.take(5).toByteArray(), Charsets.UTF_8))
+
+        val result = TOTPGenerator.generateCurrentTotp(
+            secretBase32 = secret,
+            currentTimeMillis = 1600000000000L
+        )
+        assertNotNull(result)
+        assertEquals(6, result!!.code.length)
+        assertTrue(result.secondsRemaining in 0..30)
+    }
+
+    @Test
+    fun testPasswordHealthAnalyzer() {
+        val items = listOf(
+            PasswordHealthAnalyzer.PasswordItemInfo(
+                id = "1",
+                title = "Service A",
+                username = "user1",
+                passwordPlaintext = "weak",
+                has2FA = false,
+                passwordLastChangedEpochMs = System.currentTimeMillis()
+            ),
+            PasswordHealthAnalyzer.PasswordItemInfo(
+                id = "2",
+                title = "Service B",
+                username = "user2",
+                passwordPlaintext = "weak", // Reused
+                has2FA = false,
+                passwordLastChangedEpochMs = System.currentTimeMillis()
+            ),
+            PasswordHealthAnalyzer.PasswordItemInfo(
+                id = "3",
+                title = "Service C",
+                username = "user3",
+                passwordPlaintext = "ComplexP@ssw0rd!2026#Secure",
+                has2FA = true,
+                passwordLastChangedEpochMs = System.currentTimeMillis()
+            )
+        )
+
+        val report = PasswordHealthAnalyzer.analyze(items)
+        assertEquals(3, report.totalItems)
+        assertEquals(3, report.totalPasswords)
+        assertEquals(2, report.weakCount) // "weak" is short
+        assertEquals(2, report.reusedCount) // "weak" used twice
+        assertEquals(2, report.missing2faCount)
+    }
+
+    @Test
+    fun testEncryptedBackupAndRestore() {
+        val item1 = VaultItem(
+            id = UUID.randomUUID().toString(),
+            category = VaultCategory.SOCIAL,
+            title = "Test Social",
+            username = "alice",
+            payload = VaultItemPayload(password = "P@ssword123", url = "https://example.com")
+        )
+
+        val backupPassphrase = "MySecretBackupKey999!".toCharArray()
+        val exportResult = BackupManager.createEncryptedBackup(listOf(item1), backupPassphrase)
+
+        assertTrue(exportResult.backupString.startsWith("ADERE_VAULT_BACKUP:v1:"))
+        assertEquals(1, exportResult.itemCount)
+
+        // Decrypt with correct passphrase
+        val restoreResult = BackupManager.decryptAndValidateBackup(exportResult.backupString, backupPassphrase)
+        assertTrue(restoreResult.isSuccess)
+        val preview = restoreResult.getOrThrow()
+        assertEquals(1, preview.itemCount)
+        assertEquals("Test Social", preview.items[0].title)
+        assertEquals("P@ssword123", preview.items[0].payload.password)
+
+        // Decrypt with incorrect passphrase fails securely
+        val wrongResult = BackupManager.decryptAndValidateBackup(exportResult.backupString, "WrongPassword!".toCharArray())
+        assertTrue(wrongResult.isFailure)
+    }
+
+    @Test
+    fun testPdfExportGeneration() {
+        val item1 = VaultItem(
+            id = UUID.randomUUID().toString(),
+            category = VaultCategory.EMAIL,
+            title = "Personal Gmail",
+            username = "alice@example.com",
+            payload = VaultItemPayload(password = "Secr3tP@ss!", url = "https://mail.google.com")
+        )
+        val item2 = VaultItem(
+            id = UUID.randomUUID().toString(),
+            category = VaultCategory.CRYPTO,
+            title = "Bitcoin Cold Storage",
+            username = "bc1q...",
+            payload = VaultItemPayload(
+                cryptoAddress = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+                cryptoNetwork = "Bitcoin"
+            )
+        )
+
+        val byteArrayOutputStream = java.io.ByteArrayOutputStream()
+        val options = com.example.adere.core.backup.PdfExportManager.ExportOptions(
+            includePasswords = true,
+            includeCryptoSecrets = true,
+            includeNotes = true
+        )
+        com.example.adere.core.backup.PdfExportManager.exportToPdf(
+            items = listOf(item1, item2),
+            options = options,
+            outputStream = byteArrayOutputStream
+        )
+
+        val pdfBytes = byteArrayOutputStream.toByteArray()
+        assertTrue(pdfBytes.isNotEmpty())
+        val pdfHeader = String(pdfBytes.take(5).toByteArray(), Charsets.US_ASCII)
+        assertEquals("%PDF-", pdfHeader)
+    }
+}

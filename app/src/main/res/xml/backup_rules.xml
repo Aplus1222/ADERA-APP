@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Exclude raw local SQLite databases from unencrypted auto cloud backup -->
+    <exclude domain="database" path="adere_secure_vault.db" />
+    <exclude domain="database" path="adere_secure_vault.db-shm" />
+    <exclude domain="database" path="adere_secure_vault.db-wal" />
+    <!-- Exclude local preferences -->
+    <exclude domain="sharedpref" path="adere_vault_config.xml" />
+</full-backup-content>
