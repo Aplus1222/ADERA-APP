@@ -1,5 +1,6 @@
 package com.example.adere.presentation.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +22,8 @@ import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.VpnKey
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -38,11 +41,14 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.res.painterResource
+import com.example.R
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -52,22 +58,23 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.CharcoalBg
-import com.example.ui.theme.CharcoalBorder
-import com.example.ui.theme.CharcoalSurface
-import com.example.ui.theme.EmeraldContainer
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.SecurityRed
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.CleanBg
+import com.example.ui.theme.CleanBorder
+import com.example.ui.theme.CleanSurface
+import com.example.ui.theme.CleanSurfaceVariant
+import com.example.ui.theme.HealthRiskRed
+import com.example.ui.theme.TextDarkMuted
+import com.example.ui.theme.TextDarkPrimary
+import com.example.ui.theme.TextDarkSecondary
+import com.example.ui.theme.TotalSecurityPrimary
+import com.example.ui.theme.TotalSecurityPrimaryContainer
 
 @Composable
 fun LockScreen(
     isBiometricAvailable: Boolean,
     onTriggerBiometrics: () -> Unit,
     onUnlockWithPassword: (String, (Result<Unit>) -> Unit) -> Unit,
+    onRecoverWithKey: (recoveryKey: String, newPassword: String, (Result<Unit>) -> Unit) -> Unit = { _, _, _ -> },
     onResetVault: () -> Unit = {}
 ) {
     var password by remember { mutableStateOf("") }
@@ -75,6 +82,20 @@ fun LockScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isAuthenticating by remember { mutableStateOf(false) }
     var showResetConfirmDialog by remember { mutableStateOf(false) }
+
+    var showRecoveryDialog by remember { mutableStateOf(false) }
+    var recoveryKeyInput by remember { mutableStateOf("") }
+    var recoveryNewPassword by remember { mutableStateOf("") }
+    var recoveryConfirmPassword by remember { mutableStateOf("") }
+    var recoveryPasswordVisible by remember { mutableStateOf(false) }
+    var recoveryErrorMessage by remember { mutableStateOf<String?>(null) }
+    var isRecovering by remember { mutableStateOf(false) }
+
+    if (isBiometricAvailable) {
+        androidx.compose.runtime.LaunchedEffect(Unit) {
+            onTriggerBiometrics()
+        }
+    }
 
     fun submitPassword() {
         val trimmed = password.trim()
@@ -95,52 +116,53 @@ fun LockScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(CharcoalBg)
+            .background(CleanBg)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Vault Lock Emblem
+        // Vault Lock Emblem with new App Logo
         Box(
             modifier = Modifier
-                .size(80.dp)
+                .size(88.dp)
+                .shadow(12.dp, CircleShape, spotColor = TotalSecurityPrimary)
                 .clip(CircleShape)
-                .background(EmeraldContainer),
+                .background(TotalSecurityPrimaryContainer),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = Icons.Default.Lock,
-                contentDescription = "Vault Locked",
-                tint = EmeraldLight,
-                modifier = Modifier.size(44.dp)
+            Image(
+                painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                contentDescription = "Total Security Logo",
+                modifier = Modifier.size(76.dp)
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Text(
-            text = "ADERE",
+            text = "Authentication Required",
             style = MaterialTheme.typography.headlineLarge.copy(
                 fontWeight = FontWeight.ExtraBold,
-                color = TextPrimary,
-                letterSpacing = 2.sp
+                color = TextDarkPrimary,
+                fontSize = 24.sp
             )
         )
 
         Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = "Your vault is locked",
-            style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary)
+            text = "Fingerprint or face unlock required before viewing stored secrets",
+            style = MaterialTheme.typography.bodyMedium.copy(color = TextDarkSecondary),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(36.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = CharcoalSurface),
-            border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CharcoalBorder))
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = CleanSurface),
+            border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CleanBorder))
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 if (isBiometricAvailable) {
@@ -148,12 +170,12 @@ fun LockScreen(
                         onClick = onTriggerBiometrics,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp)
+                            .height(52.dp)
                             .testTag("unlock_biometric_button"),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = EmeraldPrimary,
-                            contentColor = Color(0xFF003824)
+                            containerColor = TotalSecurityPrimary,
+                            contentColor = Color.White
                         )
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -162,9 +184,9 @@ fun LockScreen(
                                 contentDescription = null,
                                 modifier = Modifier.size(24.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = "Unlock with Biometrics",
+                                text = "Unlock with Fingerprint or Face",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
                         }
@@ -180,18 +202,18 @@ fun LockScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(1.dp)
-                                .background(CharcoalBorder)
+                                .background(CleanBorder)
                         )
                         Text(
-                            text = " OR ",
-                            style = MaterialTheme.typography.labelSmall.copy(color = TextMuted),
+                            text = " OR MASTER PASSWORD ",
+                            style = MaterialTheme.typography.labelSmall.copy(color = TextDarkMuted, fontSize = 11.sp),
                             modifier = Modifier.padding(horizontal = 8.dp)
                         )
                         Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(1.dp)
-                                .background(CharcoalBorder)
+                                .background(CleanBorder)
                         )
                     }
 
@@ -219,16 +241,19 @@ fun LockScreen(
                             Icon(
                                 imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                 contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                                tint = TextSecondary
+                                tint = TextDarkSecondary
                             )
                         }
                     },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = EmeraldPrimary,
-                        unfocusedBorderColor = CharcoalBorder,
-                        focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary
+                        focusedContainerColor = CleanSurfaceVariant,
+                        unfocusedContainerColor = CleanSurfaceVariant,
+                        focusedBorderColor = TotalSecurityPrimary,
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedTextColor = TextDarkPrimary,
+                        unfocusedTextColor = TextDarkPrimary
                     ),
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("lock_screen_password_input")
@@ -238,7 +263,7 @@ fun LockScreen(
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = errorMessage!!,
-                        color = SecurityRed,
+                        color = HealthRiskRed,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -254,13 +279,13 @@ fun LockScreen(
                         .testTag("lock_screen_unlock_button"),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isBiometricAvailable) CharcoalBg else EmeraldPrimary,
-                        contentColor = if (isBiometricAvailable) TextPrimary else Color(0xFF003824)
+                        containerColor = if (isBiometricAvailable) CleanSurfaceVariant else TotalSecurityPrimary,
+                        contentColor = if (isBiometricAvailable) TextDarkPrimary else Color.White
                     )
                 ) {
                     if (isAuthenticating) {
                         CircularProgressIndicator(
-                            color = EmeraldLight,
+                            color = TotalSecurityPrimary,
                             modifier = Modifier.size(20.dp),
                             strokeWidth = 2.dp
                         )
@@ -274,6 +299,38 @@ fun LockScreen(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
+                OutlinedButton(
+                    onClick = {
+                        recoveryErrorMessage = null
+                        recoveryKeyInput = ""
+                        recoveryNewPassword = ""
+                        recoveryConfirmPassword = ""
+                        showRecoveryDialog = true
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(46.dp)
+                        .testTag("lock_screen_recover_button"),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TotalSecurityPrimary),
+                    border = BorderStroke(1.dp, TotalSecurityPrimary.copy(alpha = 0.5f))
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.VpnKey,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Forgot Password? Use Recovery Key",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 TextButton(
                     onClick = { showResetConfirmDialog = true },
                     modifier = Modifier
@@ -281,21 +338,208 @@ fun LockScreen(
                         .testTag("lock_screen_reset_vault_button")
                 ) {
                     Text(
-                        text = "Forgot Master Password? Reset Vault",
-                        style = MaterialTheme.typography.bodySmall.copy(color = TextMuted)
+                        text = "Reset Vault (Wipes Data)",
+                        style = MaterialTheme.typography.bodySmall.copy(color = TextDarkMuted, fontSize = 11.5.sp)
                     )
                 }
             }
         }
 
+        // Master Recovery Key Dialog
+        if (showRecoveryDialog) {
+            AlertDialog(
+                onDismissRequest = { if (!isRecovering) showRecoveryDialog = false },
+                icon = {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(TotalSecurityPrimaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.VpnKey,
+                            contentDescription = null,
+                            tint = TotalSecurityPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                },
+                title = {
+                    Text(
+                        text = "Recover Encrypted Vault",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = TextDarkPrimary
+                        )
+                    )
+                },
+                text = {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Enter your 24-character Master Recovery Key to restore your vault and set a new Master Password without losing your data.",
+                            style = MaterialTheme.typography.bodySmall.copy(color = TextDarkSecondary)
+                        )
+
+                        OutlinedTextField(
+                            value = recoveryKeyInput,
+                            onValueChange = { input ->
+                                // Auto uppercase and format
+                                val raw = input.replace("-", "").replace(" ", "").uppercase()
+                                recoveryKeyInput = raw.chunked(4).joinToString("-").take(29)
+                                recoveryErrorMessage = null
+                            },
+                            label = { Text("Master Recovery Key") },
+                            placeholder = { Text("XXXX-XXXX-XXXX-XXXX-XXXX-XXXX") },
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = CleanSurfaceVariant,
+                                unfocusedContainerColor = CleanSurfaceVariant,
+                                focusedBorderColor = TotalSecurityPrimary,
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedTextColor = TextDarkPrimary,
+                                unfocusedTextColor = TextDarkPrimary
+                            ),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("recovery_key_input")
+                        )
+
+                        OutlinedTextField(
+                            value = recoveryNewPassword,
+                            onValueChange = {
+                                recoveryNewPassword = it
+                                recoveryErrorMessage = null
+                            },
+                            label = { Text("New Master Password") },
+                            singleLine = true,
+                            visualTransformation = if (recoveryPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            trailingIcon = {
+                                IconButton(onClick = { recoveryPasswordVisible = !recoveryPasswordVisible }) {
+                                    Icon(
+                                        imageVector = if (recoveryPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                        contentDescription = null,
+                                        tint = TextDarkSecondary
+                                    )
+                                }
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = CleanSurfaceVariant,
+                                unfocusedContainerColor = CleanSurfaceVariant,
+                                focusedBorderColor = TotalSecurityPrimary,
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedTextColor = TextDarkPrimary,
+                                unfocusedTextColor = TextDarkPrimary
+                            ),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("recovery_new_password_input")
+                        )
+
+                        OutlinedTextField(
+                            value = recoveryConfirmPassword,
+                            onValueChange = {
+                                recoveryConfirmPassword = it
+                                recoveryErrorMessage = null
+                            },
+                            label = { Text("Confirm New Password") },
+                            singleLine = true,
+                            visualTransformation = if (recoveryPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = CleanSurfaceVariant,
+                                unfocusedContainerColor = CleanSurfaceVariant,
+                                focusedBorderColor = TotalSecurityPrimary,
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedTextColor = TextDarkPrimary,
+                                unfocusedTextColor = TextDarkPrimary
+                            ),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("recovery_confirm_password_input")
+                        )
+
+                        if (recoveryErrorMessage != null) {
+                            Text(
+                                text = recoveryErrorMessage!!,
+                                color = HealthRiskRed,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val cleanKey = recoveryKeyInput.replace("-", "").replace(" ", "").trim()
+                            if (cleanKey.length != 24) {
+                                recoveryErrorMessage = "Recovery key must be 24 characters long."
+                                return@Button
+                            }
+                            val newPass = recoveryNewPassword.trim()
+                            if (newPass.length < 8) {
+                                recoveryErrorMessage = "New password must be at least 8 characters."
+                                return@Button
+                            }
+                            if (newPass != recoveryConfirmPassword.trim()) {
+                                recoveryErrorMessage = "Passwords do not match."
+                                return@Button
+                            }
+
+                            isRecovering = true
+                            recoveryErrorMessage = null
+                            onRecoverWithKey(cleanKey, newPass) { res ->
+                                isRecovering = false
+                                if (res.isSuccess) {
+                                    showRecoveryDialog = false
+                                } else {
+                                    recoveryErrorMessage = res.exceptionOrNull()?.message ?: "Recovery failed. Verify your recovery key."
+                                }
+                            }
+                        },
+                        enabled = !isRecovering,
+                        modifier = Modifier.testTag("recovery_submit_button"),
+                        colors = ButtonDefaults.buttonColors(containerColor = TotalSecurityPrimary)
+                    ) {
+                        if (isRecovering) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Recover & Unlock", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showRecoveryDialog = false },
+                        enabled = !isRecovering
+                    ) {
+                        Text("Cancel", color = TextDarkSecondary)
+                    }
+                },
+                containerColor = CleanSurface,
+                shape = RoundedCornerShape(18.dp)
+            )
+        }
+
         if (showResetConfirmDialog) {
             AlertDialog(
                 onDismissRequest = { showResetConfirmDialog = false },
-                title = { Text("Reset Entire Vault?", color = SecurityRed, fontWeight = FontWeight.Bold) },
+                title = { Text("Reset Entire Vault?", color = HealthRiskRed, fontWeight = FontWeight.Bold) },
                 text = {
                     Text(
-                        "Because Adere is a zero-knowledge offline vault, forgotten master passwords cannot be recovered. Resetting will erase the current encrypted database and return you to the initial setup screen.\n\nDo you want to wipe and re-initialize?",
-                        color = TextSecondary
+                        "Because this is an offline encrypted vault, forgotten master passwords cannot be recovered. Resetting will erase the current database and return to setup.\n\nDo you want to reset?",
+                        color = TextDarkSecondary
                     )
                 },
                 confirmButton = {
@@ -304,17 +548,17 @@ fun LockScreen(
                             showResetConfirmDialog = false
                             onResetVault()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = SecurityRed)
+                        colors = ButtonDefaults.buttonColors(containerColor = HealthRiskRed)
                     ) {
-                        Text("Wipe & Reset", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text("Reset Vault", color = Color.White, fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showResetConfirmDialog = false }) {
-                        Text("Cancel", color = TextSecondary)
+                        Text("Cancel", color = TextDarkSecondary)
                     }
                 },
-                containerColor = CharcoalSurface,
+                containerColor = CleanSurface,
                 shape = RoundedCornerShape(16.dp)
             )
         }

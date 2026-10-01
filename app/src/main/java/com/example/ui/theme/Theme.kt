@@ -3,6 +3,7 @@ package com.example.ui.theme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -24,41 +25,63 @@ data class ThemeAccents(
 
 val LocalThemeAccents = staticCompositionLocalOf {
     ThemeAccents(
-        primary = EmeraldPrimary,
-        primaryLight = EmeraldLight,
+        primary = TotalSecurityPrimary,
+        primaryLight = TotalSecurityPrimaryLight,
         primaryGlow = EmeraldGlow,
-        surface = CharcoalSurface,
-        surfaceElevated = CharcoalSurfaceElevated,
-        background = CharcoalBg,
-        border = CharcoalBorder,
-        borderGlow = CharcoalBorderGlow,
-        ambientGradient = Brush.verticalGradient(listOf(Color(0xFF0F2620), CharcoalBg)),
-        cardBorderGradient = Brush.linearGradient(listOf(CharcoalBorderGlow, CharcoalBorder))
+        surface = CleanSurface,
+        surfaceElevated = CleanSurface,
+        background = CleanBg,
+        border = CleanBorder,
+        borderGlow = TotalSecurityPrimary,
+        ambientGradient = Brush.verticalGradient(listOf(Color(0xFFEEF0FF), CleanBg)),
+        cardBorderGradient = Brush.linearGradient(listOf(CleanBorder, CleanBorderSubtle))
     )
 }
 
-private fun getDarkColorScheme(palette: VaultThemePalette): ColorScheme {
+private fun getAppColorScheme(palette: VaultThemePalette): ColorScheme {
     return when (palette) {
+        VaultThemePalette.TOTAL_SECURITY -> lightColorScheme(
+            primary = TotalSecurityPrimary,
+            onPrimary = Color.White,
+            primaryContainer = TotalSecurityPrimaryContainer,
+            onPrimaryContainer = TotalSecurityOnPrimaryContainer,
+            secondary = CategoryAppsYellow,
+            onSecondary = Color.White,
+            secondaryContainer = Color(0xFFFEF3C7),
+            onSecondaryContainer = Color(0xFF78350F),
+            tertiary = CategoryCardTeal,
+            onTertiary = Color.White,
+            background = CleanBg,
+            onBackground = TextDarkPrimary,
+            surface = CleanSurface,
+            onSurface = TextDarkPrimary,
+            surfaceVariant = CleanSurfaceVariant,
+            onSurfaceVariant = TextDarkSecondary,
+            outline = CleanBorder,
+            outlineVariant = CleanBorderSubtle,
+            error = HealthRiskRed,
+            onError = Color.White
+        )
         VaultThemePalette.OBSIDIAN_EMERALD -> darkColorScheme(
-            primary = EmeraldPrimary,
+            primary = Color(0xFF10B981),
             onPrimary = Color(0xFF003824),
-            primaryContainer = EmeraldContainer,
-            onPrimaryContainer = OnEmeraldContainer,
+            primaryContainer = Color(0xFF064E3B),
+            onPrimaryContainer = Color(0xFFA7F3D0),
             secondary = GoldAccent,
             onSecondary = Color(0xFF452200),
-            secondaryContainer = GoldContainer,
-            onSecondaryContainer = OnGoldContainer,
-            tertiary = SecurityBlue,
+            secondaryContainer = Color(0xFF78350F),
+            onSecondaryContainer = Color(0xFFFDE68A),
+            tertiary = Color(0xFF38BDF8),
             onTertiary = Color(0xFF003258),
-            background = CharcoalBg,
-            onBackground = TextPrimary,
-            surface = CharcoalSurface,
-            onSurface = TextPrimary,
-            surfaceVariant = CharcoalSurfaceVariant,
-            onSurfaceVariant = TextSecondary,
-            outline = CharcoalBorder,
-            outlineVariant = CharcoalBorderSubtle,
-            error = SecurityRed,
+            background = Color(0xFF070B0A),
+            onBackground = Color(0xFFF8FAFC),
+            surface = Color(0xFF0F1715),
+            onSurface = Color(0xFFF8FAFC),
+            surfaceVariant = Color(0xFF16221F),
+            onSurfaceVariant = Color(0xFF94A3B8),
+            outline = Color(0xFF203630),
+            outlineVariant = Color(0xFF142420),
+            error = HealthRiskRed,
             onError = Color.White
         )
         VaultThemePalette.MIDNIGHT_SAPPHIRE -> darkColorScheme(
@@ -66,43 +89,21 @@ private fun getDarkColorScheme(palette: VaultThemePalette): ColorScheme {
             onPrimary = Color(0xFF003258),
             primaryContainer = SapphireContainer,
             onPrimaryContainer = Color(0xFFC2E7FF),
-            secondary = EmeraldLight,
+            secondary = Color(0xFF34D399),
             onSecondary = Color(0xFF003824),
-            secondaryContainer = EmeraldContainer,
-            onSecondaryContainer = OnEmeraldContainer,
-            tertiary = SecurityPurple,
+            secondaryContainer = Color(0xFF064E3B),
+            onSecondaryContainer = Color(0xFFA7F3D0),
+            tertiary = Color(0xFFA855F7),
             onTertiary = Color(0xFF38006B),
             background = SapphireBg,
-            onBackground = TextPrimary,
+            onBackground = Color(0xFFF8FAFC),
             surface = SapphireSurface,
-            onSurface = TextPrimary,
+            onSurface = Color(0xFFF8FAFC),
             surfaceVariant = SapphireSurfaceVariant,
-            onSurfaceVariant = TextSecondary,
+            onSurfaceVariant = Color(0xFF94A3B8),
             outline = SapphireBorder,
             outlineVariant = Color(0xFF101B2E),
-            error = SecurityRed,
-            onError = Color.White
-        )
-        VaultThemePalette.AMETHYST_CRYPT -> darkColorScheme(
-            primary = AmethystPrimary,
-            onPrimary = Color(0xFF38006B),
-            primaryContainer = AmethystContainer,
-            onPrimaryContainer = Color(0xFFF3E8FF),
-            secondary = EmeraldLight,
-            onSecondary = Color(0xFF003824),
-            secondaryContainer = EmeraldContainer,
-            onSecondaryContainer = OnEmeraldContainer,
-            tertiary = GoldAccent,
-            onTertiary = Color(0xFF452200),
-            background = AmethystBg,
-            onBackground = TextPrimary,
-            surface = AmethystSurface,
-            onSurface = TextPrimary,
-            surfaceVariant = AmethystSurfaceVariant,
-            onSurfaceVariant = TextSecondary,
-            outline = AmethystBorder,
-            outlineVariant = Color(0xFF1E1436),
-            error = SecurityRed,
+            error = HealthRiskRed,
             onError = Color.White
         )
     }
@@ -110,17 +111,29 @@ private fun getDarkColorScheme(palette: VaultThemePalette): ColorScheme {
 
 private fun getThemeAccents(palette: VaultThemePalette): ThemeAccents {
     return when (palette) {
+        VaultThemePalette.TOTAL_SECURITY -> ThemeAccents(
+            primary = TotalSecurityPrimary,
+            primaryLight = TotalSecurityPrimaryLight,
+            primaryGlow = Color(0x265E5CE6),
+            surface = CleanSurface,
+            surfaceElevated = CleanSurface,
+            background = CleanBg,
+            border = CleanBorder,
+            borderGlow = TotalSecurityPrimary,
+            ambientGradient = Brush.verticalGradient(listOf(Color(0xFFF1F3FF), CleanBg)),
+            cardBorderGradient = Brush.linearGradient(listOf(CleanBorder, CleanBorderSubtle))
+        )
         VaultThemePalette.OBSIDIAN_EMERALD -> ThemeAccents(
-            primary = EmeraldPrimary,
-            primaryLight = EmeraldLight,
-            primaryGlow = EmeraldGlow,
-            surface = CharcoalSurface,
-            surfaceElevated = CharcoalSurfaceElevated,
-            background = CharcoalBg,
-            border = CharcoalBorder,
-            borderGlow = CharcoalBorderGlow,
-            ambientGradient = Brush.verticalGradient(listOf(Color(0xFF0F2620), CharcoalBg)),
-            cardBorderGradient = Brush.linearGradient(listOf(CharcoalBorderGlow, CharcoalBorder))
+            primary = Color(0xFF10B981),
+            primaryLight = Color(0xFF34D399),
+            primaryGlow = Color(0x3310B981),
+            surface = Color(0xFF0F1715),
+            surfaceElevated = Color(0xFF1B2C27),
+            background = Color(0xFF070B0A),
+            border = Color(0xFF203630),
+            borderGlow = Color(0xFF2D5047),
+            ambientGradient = Brush.verticalGradient(listOf(Color(0xFF0F2620), Color(0xFF070B0A))),
+            cardBorderGradient = Brush.linearGradient(listOf(Color(0xFF2D5047), Color(0xFF203630)))
         )
         VaultThemePalette.MIDNIGHT_SAPPHIRE -> ThemeAccents(
             primary = SapphirePrimary,
@@ -134,28 +147,16 @@ private fun getThemeAccents(palette: VaultThemePalette): ThemeAccents {
             ambientGradient = Brush.verticalGradient(listOf(Color(0xFF0C213D), SapphireBg)),
             cardBorderGradient = Brush.linearGradient(listOf(Color(0xFF254670), SapphireBorder))
         )
-        VaultThemePalette.AMETHYST_CRYPT -> ThemeAccents(
-            primary = AmethystPrimary,
-            primaryLight = AmethystLight,
-            primaryGlow = AmethystGlow,
-            surface = AmethystSurface,
-            surfaceElevated = Color(0xFF22173D),
-            background = AmethystBg,
-            border = AmethystBorder,
-            borderGlow = Color(0xFF48307A),
-            ambientGradient = Brush.verticalGradient(listOf(Color(0xFF241042), AmethystBg)),
-            cardBorderGradient = Brush.linearGradient(listOf(Color(0xFF48307A), AmethystBorder))
-        )
     }
 }
 
 @Composable
 fun AdereTheme(
-    palette: VaultThemePalette = VaultThemePalette.OBSIDIAN_EMERALD,
-    darkTheme: Boolean = true,
+    palette: VaultThemePalette = VaultThemePalette.TOTAL_SECURITY,
+    darkTheme: Boolean = palette != VaultThemePalette.TOTAL_SECURITY,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = getDarkColorScheme(palette)
+    val colorScheme = getAppColorScheme(palette)
     val accents = getThemeAccents(palette)
 
     CompositionLocalProvider(LocalThemeAccents provides accents) {
@@ -170,7 +171,7 @@ fun AdereTheme(
 
 @Composable
 fun MyApplicationTheme(
-    darkTheme: Boolean = true,
+    darkTheme: Boolean = false,
     content: @Composable () -> Unit
 ) {
     AdereTheme(darkTheme = darkTheme, content = content)

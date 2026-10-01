@@ -3,82 +3,94 @@ package com.example.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // ==========================================
-// 1. OBSIDIAN EMERALD PALETTE (Primary Vault)
+// Total Security (Image Theme) Palette
 // ==========================================
-val EmeraldPrimary = Color(0xFF10B981)
-val EmeraldLight = Color(0xFF34D399)
-val EmeraldDark = Color(0xFF065F46)
-val EmeraldContainer = Color(0xFF064E3B)
-val OnEmeraldContainer = Color(0xFFA7F3D0)
-val EmeraldGlow = Color(0x3310B981)
+val TotalSecurityPrimary = Color(0xFF5E5CE6) // Royal Indigo / Periwinkle
+val TotalSecurityPrimaryLight = Color(0xFF7E7CF6)
+val TotalSecurityPrimaryDark = Color(0xFF4341B8)
+val TotalSecurityPrimaryContainer = Color(0xFFEEF0FF) // Lavender password card container
+val TotalSecurityOnPrimaryContainer = Color(0xFF27237E)
 
-val GoldAccent = Color(0xFFF59E0B)
+// Category Colors from Image
+val CategorySocialBlue = Color(0xFF5E5CE6) // Social tile
+val CategoryAppsYellow = Color(0xFFF5BA31) // Apps tile
+val CategoryCardTeal = Color(0xFF48C9B0)   // Card tile
+val CategoryCoral = Color(0xFFFF6B6B)
+
+// Action & Utility Colors from Image
+val ActionCopyGreen = Color(0xFF6EE7B7)    // "Copy to clipboard" button
+val ActionCopyGreenText = Color(0xFF065F46)
+val ActionRefreshYellow = Color(0xFFFEF08A) // Circular refresh button
+val ActionRefreshYellowIcon = Color(0xFF78350F)
+
+// Health Ring Colors from Image
+val HealthSafeBlue = Color(0xFF5E5CE6)
+val HealthRefusedYellow = Color(0xFFF5BA31)
+val HealthRiskRed = Color(0xFFEF4444)
+val HealthCompromisedTeal = Color(0xFF48C9B0)
+
+// Surfaces & Backgrounds
+val CleanBg = Color(0xFFF7F8FC)
+val CleanSurface = Color(0xFFFFFFFF)
+val CleanSurfaceVariant = Color(0xFFF1F3F9)
+val CleanBorder = Color(0xFFECEEF5)
+val CleanBorderSubtle = Color(0xFFF3F4F8)
+
+// Typography Colors
+val TextDarkPrimary = Color(0xFF1A1C29)
+val TextDarkSecondary = Color(0xFF737A8C)
+val TextDarkMuted = Color(0xFFA1A7B7)
+
+// Backward Compatibility Aliases
+val CharcoalBg = CleanBg
+val CharcoalSurface = CleanSurface
+val CharcoalSurfaceVariant = CleanSurfaceVariant
+val CharcoalSurfaceElevated = CleanSurface
+val CharcoalBorder = CleanBorder
+val CharcoalBorderSubtle = CleanBorderSubtle
+val CharcoalBorderGlow = Color(0xFFD6DAE8)
+
+val EmeraldPrimary = TotalSecurityPrimary
+val EmeraldLight = TotalSecurityPrimaryLight
+val EmeraldDark = TotalSecurityPrimaryDark
+val EmeraldContainer = TotalSecurityPrimaryContainer
+val OnEmeraldContainer = TotalSecurityOnPrimaryContainer
+val EmeraldGlow = Color(0x265E5CE6)
+
+val GoldAccent = CategoryAppsYellow
 val GoldLight = Color(0xFFFBBF24)
-val GoldContainer = Color(0xFF78350F)
-val OnGoldContainer = Color(0xFFFDE68A)
-val GoldGlow = Color(0x33F59E0B)
+val GoldContainer = Color(0xFFFEF3C7)
+val OnGoldContainer = Color(0xFF78350F)
+val GoldGlow = Color(0x33F5BA31)
 
-// Obsidian Surfaces (Extra Rich, Deep Layered Tones)
-val CharcoalBg = Color(0xFF070B0A)
-val CharcoalSurface = Color(0xFF0F1715)
-val CharcoalSurfaceVariant = Color(0xFF16221F)
-val CharcoalSurfaceElevated = Color(0xFF1B2C27)
-val CharcoalBorder = Color(0xFF203630)
-val CharcoalBorderSubtle = Color(0xFF142420)
-val CharcoalBorderGlow = Color(0xFF2D5047)
-
-// ==========================================
-// 2. MIDNIGHT SAPPHIRE PALETTE (Deep Defense)
-// ==========================================
+// Sapphire Palette for theme switcher
 val SapphirePrimary = Color(0xFF38BDF8)
 val SapphireLight = Color(0xFF7DD3FC)
 val SapphireDark = Color(0xFF0369A1)
 val SapphireContainer = Color(0xFF0C4A6E)
 val SapphireGlow = Color(0x3338BDF8)
-
 val SapphireBg = Color(0xFF060B12)
 val SapphireSurface = Color(0xFF0D1726)
 val SapphireSurfaceVariant = Color(0xFF132238)
 val SapphireBorder = Color(0xFF1D3557)
 
-// ==========================================
-// 3. AMETHYST CRYPT PALETTE (Royal Cyber Purple)
-// ==========================================
-val AmethystPrimary = Color(0xFFA855F7)
-val AmethystLight = Color(0xFFC084FC)
-val AmethystDark = Color(0xFF6B21A8)
-val AmethystContainer = Color(0xFF3B0764)
-val AmethystGlow = Color(0x33A855F7)
+val TextPrimary = TextDarkPrimary
+val TextSecondary = TextDarkSecondary
+val TextMuted = TextDarkMuted
 
-val AmethystBg = Color(0xFF0A0712)
-val AmethystSurface = Color(0xFF150F26)
-val AmethystSurfaceVariant = Color(0xFF201638)
-val AmethystBorder = Color(0xFF322357)
-
-// ==========================================
-// Typography Colors
-// ==========================================
-val TextPrimary = Color(0xFFF8FAFC)
-val TextSecondary = Color(0xFF94A3B8)
-val TextMuted = Color(0xFF64748B)
-
-// ==========================================
-// Status / Health Telemetry Colors
-// ==========================================
-val SecurityGreen = Color(0xFF10B981)
-val SecurityYellow = Color(0xFFFBBF24)
+val SecurityGreen = HealthCompromisedTeal
+val SecurityYellow = HealthRefusedYellow
 val SecurityOrange = Color(0xFFF97316)
-val SecurityRed = Color(0xFFEF4444)
-val SecurityBlue = Color(0xFF38BDF8)
+val SecurityRed = HealthRiskRed
+val SecurityBlue = TotalSecurityPrimary
 val SecurityPurple = Color(0xFFA855F7)
 
-// Light Theme Fallbacks
-val LightBg = Color(0xFFF8FAFC)
-val LightSurface = Color(0xFFFFFFFF)
-val LightSurfaceVariant = Color(0xFFF1F5F9)
-val LightBorder = Color(0xFFE2E8F0)
-val LightTextPrimary = Color(0xFF0F172A)
-val LightTextSecondary = Color(0xFF475569)
+val LightBg = CleanBg
+val LightSurface = CleanSurface
+val LightSurfaceVariant = CleanSurfaceVariant
+val LightBorder = CleanBorder
+val LightTextPrimary = TextDarkPrimary
+val LightTextSecondary = TextDarkSecondary
 
 // Theme Palette Enum
 enum class VaultThemePalette(
@@ -88,25 +100,25 @@ enum class VaultThemePalette(
     val surfaceColor: Color,
     val bgColor: Color
 ) {
+    TOTAL_SECURITY(
+        title = "Total Security",
+        subtitle = "Clean Purple & Modern (Image Theme)",
+        primaryColor = Color(0xFF5E5CE6),
+        surfaceColor = Color(0xFFFFFFFF),
+        bgColor = Color(0xFFF7F8FC)
+    ),
     OBSIDIAN_EMERALD(
         title = "Obsidian Emerald",
-        subtitle = "Cyber Cipher (Default)",
+        subtitle = "Dark Cyber Cipher",
         primaryColor = Color(0xFF10B981),
         surfaceColor = Color(0xFF0F1715),
         bgColor = Color(0xFF070B0A)
     ),
     MIDNIGHT_SAPPHIRE(
         title = "Midnight Sapphire",
-        subtitle = "Defense Oceanic",
+        subtitle = "Deep Defense Oceanic",
         primaryColor = Color(0xFF38BDF8),
         surfaceColor = Color(0xFF0D1726),
         bgColor = Color(0xFF060B12)
-    ),
-    AMETHYST_CRYPT(
-        title = "Amethyst Crypt",
-        subtitle = "Electric Royal",
-        primaryColor = Color(0xFFA855F7),
-        surfaceColor = Color(0xFF150F26),
-        bgColor = Color(0xFF0A0712)
     )
 }

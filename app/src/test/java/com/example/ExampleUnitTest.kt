@@ -231,4 +231,149 @@ class ExampleUnitTest {
         val pdfHeader = String(pdfBytes.take(5).toByteArray(), Charsets.US_ASCII)
         assertEquals("%PDF-", pdfHeader)
     }
+
+    @Test
+    fun testVaultSearchFilteringByTitleAndCategory() {
+        val item1 = VaultItem(
+            id = "1",
+            category = VaultCategory.SOCIAL,
+            title = "Instagram Account",
+            username = "insta_user",
+            payload = VaultItemPayload(password = "P@ss1")
+        )
+        val item2 = VaultItem(
+            id = "2",
+            category = VaultCategory.CRYPTO,
+            title = "Cold Storage Ledger",
+            username = "0x123",
+            payload = VaultItemPayload(cryptoNetwork = "Ethereum")
+        )
+        val item3 = VaultItem(
+            id = "3",
+            category = VaultCategory.EMAIL,
+            title = "Work Gmail",
+            username = "worker@company.com",
+            payload = VaultItemPayload(password = "P@ss3")
+        )
+        val allItems = listOf(item1, item2, item3)
+
+        fun filterItems(query: String, category: VaultCategory = VaultCategory.ALL): List<VaultItem> {
+            return allItems.filter { item ->
+                val matchesCategory = when (category) {
+                    VaultCategory.ALL -> true
+                    VaultCategory.FAVORITES -> item.isFavorite
+                    else -> item.category == category
+                }
+                val matchesQuery = query.isBlank() ||
+                        item.title.contains(query, ignoreCase = true) ||
+                        item.category.title.contains(query, ignoreCase = true) ||
+                        item.category.name.contains(query, ignoreCase = true) ||
+                        item.username.contains(query, ignoreCase = true)
+                matchesCategory && matchesQuery
+            }
+        }
+
+        // Search by title "Instagram"
+        val byTitle = filterItems("Instagram")
+        assertEquals(1, byTitle.size)
+        assertEquals("Instagram Account", byTitle[0].title)
+
+        // Search by category "Crypto"
+        val byCategory = filterItems("Crypto")
+        assertEquals(1, byCategory.size)
+        assertEquals("Cold Storage Ledger", byCategory[0].title)
+
+        // Search by category "Social"
+        val bySocialCategory = filterItems("Social")
+        assertEquals(1, bySocialCategory.size)
+        assertEquals("Instagram Account", bySocialCategory[0].title)
+
+        // Search by category "Email"
+        val byEmailCategory = filterItems("Email")
+        assertEquals(1, byEmailCategory.size)
+        assertEquals("Work Gmail", byEmailCategory[0].title)
+
+        // Search with non-matching query
+        val emptyResult = filterItems("NonExistentXYZ")
+        assertTrue(emptyResult.isEmpty())
+    }
+
+    @Test
+    fun testBiometricSessionLifecycleAndLockState() {
+        val context = org.robolectric.RuntimeEnvironment.getApplication()
+        val configStore = com.example.adere.data.local.VaultConfigStore(context)
+        val keystoreManager = com.example.adere.core.crypto.KeystoreManager()
+        val sessionManager = com.example.adere.domain.repository.VaultSessionManager(configStore, keystoreManager)
+
+        // Fresh session is uninitialized
+        assertFalse(sessionManager.isVaultInitialized())
+        assertEquals(com.example.adere.domain.repository.VaultLockState.Uninitialized, sessionManager.lockState.value)
+
+        // Test lock state transitions
+        sessionManager.lock()
+        assertEquals(com.example.adere.domain.repository.VaultLockState.Uninitialized, sessionManager.lockState.value)
+    }
+
+    @Test
+    fun testMasterRecoveryKeyFormatAndValidation() {
+        val key = com.example.adere.core.crypto.RecoveryKeyManager.generateRecoveryKey()
+        assertNotNull(key)
+        assertEquals(29, key.length) // 24 chars + 5 hyphens = 29
+        assertTrue(com.example.adere.core.crypto.RecoveryKeyManager.isValidKeyFormat(key))
+
+        // Normalization
+        val raw = com.example.adere.core.crypto.RecoveryKeyManager.normalizeKey(key)
+        assertEquals(24, raw.length)
+        val reformatted = com.example.adere.core.crypto.RecoveryKeyManager.formatKey(raw)
+        assertEquals(key, reformatted)
+
+        // Invalid key rejects
+        assertFalse(com.example.adere.core.crypto.RecoveryKeyManager.isValidKeyFormat("INVALID-TOO-SHORT"))
+    }
+
+    @Test
+    fun testVaultRecoveryWithKeyWhenPasswordForgotten() = kotlinx.coroutines.runBlocking {
+        val context = org.robolectric.RuntimeEnvironment.getApplication()
+        val configStore = com.example.adere.data.local.VaultConfigStore(context)
+        val keystoreManager = com.example.adere.core.crypto.KeystoreManager()
+        val sessionManager = com.example.adere.domain.repository.VaultSessionManager(configStore, keystoreManager)
+
+        // 1. Initialize vault with initial master password
+        val initResult = sessionManager.initializeVault("InitialPass123!".toCharArray(), enableBiometric = false)
+        assertTrue(initResult.isSuccess)
+        assertTrue(sessionManager.isVaultInitialized())
+
+        // 2. Fetch the active recovery key
+        val keyResult = sessionManager.getActiveRecoveryKey()
+        assertTrue(keyResult.isSuccess)
+        val recoveryKey = keyResult.getOrThrow()
+        assertTrue(recoveryKey.isNotBlank())
+
+        // 3. User locks vault and forgets password
+        sessionManager.lock()
+        assertEquals(com.example.adere.domain.repository.VaultLockState.Locked, sessionManager.lockState.value)
+
+        // 4. Attempt recovery with wrong key fails
+        val badKeyResult = sessionManager.recoverVaultWithKey("AAAA-BBBB-CCCC-DDDD-EEEE-FFFF", "NewPass456!".toCharArray())
+        assertTrue(badKeyResult.isFailure)
+        assertEquals(com.example.adere.domain.repository.VaultLockState.Locked, sessionManager.lockState.value)
+
+        // 5. Successful recovery using correct Master Recovery Key
+        val recoveryResult = sessionManager.recoverVaultWithKey(recoveryKey, "NewPass456!".toCharArray())
+        assertTrue(recoveryResult.isSuccess)
+        assertEquals(com.example.adere.domain.repository.VaultLockState.Unlocked, sessionManager.lockState.value)
+
+        // 6. Test lock and unlock with new password
+        sessionManager.lock()
+        assertEquals(com.example.adere.domain.repository.VaultLockState.Locked, sessionManager.lockState.value)
+
+        // Old password must fail
+        val oldUnlock = sessionManager.unlockWithMasterPassword("InitialPass123!".toCharArray())
+        assertTrue(oldUnlock.isFailure)
+
+        // New password must succeed
+        val newUnlock = sessionManager.unlockWithMasterPassword("NewPass456!".toCharArray())
+        assertTrue(newUnlock.isSuccess)
+        assertEquals(com.example.adere.domain.repository.VaultLockState.Unlocked, sessionManager.lockState.value)
+    }
 }

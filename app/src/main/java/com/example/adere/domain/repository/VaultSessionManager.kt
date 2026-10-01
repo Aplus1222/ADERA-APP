@@ -74,6 +74,21 @@ class VaultSessionManager(
             configStore.encryptedDekBase64 = encryptedDek.toBase64Ciphertext()
             configStore.encryptedDekIvBase64 = encryptedDek.toBase64Iv()
 
+            // Generate and protect Master Recovery Key
+            val recoveryKey = com.example.adere.core.crypto.RecoveryKeyManager.generateRecoveryKey()
+            val normalizedRecoveryKey = com.example.adere.core.crypto.RecoveryKeyManager.normalizeKey(recoveryKey)
+            val recoverySalt = CryptoEngine.generateSalt()
+            val recoveryDerivedKey = CryptoEngine.deriveKey(normalizedRecoveryKey.toCharArray(), recoverySalt)
+            val recoveryEncryptedDek = CryptoEngine.encrypt(newDek, recoveryDerivedKey)
+            val storedRecoveryKeyEnc = CryptoEngine.encryptString(recoveryKey, newDek)
+
+            configStore.recoverySaltBase64 = com.example.adere.core.crypto.Base64Codec.encode(recoverySalt)
+            configStore.recoveryEncryptedDekBase64 = recoveryEncryptedDek.toBase64Ciphertext()
+            configStore.recoveryEncryptedDekIvBase64 = recoveryEncryptedDek.toBase64Iv()
+            configStore.storedRecoveryKeyEncBase64 = storedRecoveryKeyEnc.toBase64Ciphertext()
+            configStore.storedRecoveryKeyIvBase64 = storedRecoveryKeyEnc.toBase64Iv()
+            configStore.hasRecoveryKey = true
+
             if (enableBiometric) {
                 try {
                     val biometricEncrypted = keystoreManager.encryptDek(newDek)
@@ -127,6 +142,25 @@ class VaultSessionManager(
             inMemoryDek = decryptedDek
             lastActiveTime = System.currentTimeMillis()
             _lockState.value = VaultLockState.Unlocked
+
+            // Auto-provision Master Recovery Key for legacy vaults if missing
+            if (!configStore.hasRecoveryKey || configStore.recoveryEncryptedDekBase64.isBlank()) {
+                try {
+                    val recoveryKey = com.example.adere.core.crypto.RecoveryKeyManager.generateRecoveryKey()
+                    val normalizedKey = com.example.adere.core.crypto.RecoveryKeyManager.normalizeKey(recoveryKey)
+                    val recoverySalt = CryptoEngine.generateSalt()
+                    val recoveryDerivedKey = CryptoEngine.deriveKey(normalizedKey.toCharArray(), recoverySalt)
+                    val recoveryEncryptedDek = CryptoEngine.encrypt(decryptedDek, recoveryDerivedKey)
+                    val storedRecoveryKeyEnc = CryptoEngine.encryptString(recoveryKey, decryptedDek)
+
+                    configStore.recoverySaltBase64 = com.example.adere.core.crypto.Base64Codec.encode(recoverySalt)
+                    configStore.recoveryEncryptedDekBase64 = recoveryEncryptedDek.toBase64Ciphertext()
+                    configStore.recoveryEncryptedDekIvBase64 = recoveryEncryptedDek.toBase64Iv()
+                    configStore.storedRecoveryKeyEncBase64 = storedRecoveryKeyEnc.toBase64Ciphertext()
+                    configStore.storedRecoveryKeyIvBase64 = storedRecoveryKeyEnc.toBase64Iv()
+                    configStore.hasRecoveryKey = true
+                } catch (_: Exception) {}
+            }
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -212,6 +246,129 @@ class VaultSessionManager(
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    /**
+     * Retrieves the decrypted Master Recovery Key for the user to view or backup.
+     * Vault must be unlocked.
+     */
+    fun getActiveRecoveryKey(): Result<String> {
+        val dek = inMemoryDek ?: return Result.failure(IllegalStateException("Vault must be unlocked to view recovery key."))
+        return try {
+            if (!configStore.hasRecoveryKey || configStore.storedRecoveryKeyEncBase64.isBlank()) {
+                // Generate and store on the fly
+                val newKey = com.example.adere.core.crypto.RecoveryKeyManager.generateRecoveryKey()
+                val normalizedKey = com.example.adere.core.crypto.RecoveryKeyManager.normalizeKey(newKey)
+                val recoverySalt = CryptoEngine.generateSalt()
+                val recoveryDerivedKey = CryptoEngine.deriveKey(normalizedKey.toCharArray(), recoverySalt)
+                val recoveryEncryptedDek = CryptoEngine.encrypt(dek, recoveryDerivedKey)
+                val storedRecoveryKeyEnc = CryptoEngine.encryptString(newKey, dek)
+
+                configStore.recoverySaltBase64 = com.example.adere.core.crypto.Base64Codec.encode(recoverySalt)
+                configStore.recoveryEncryptedDekBase64 = recoveryEncryptedDek.toBase64Ciphertext()
+                configStore.recoveryEncryptedDekIvBase64 = recoveryEncryptedDek.toBase64Iv()
+                configStore.storedRecoveryKeyEncBase64 = storedRecoveryKeyEnc.toBase64Ciphertext()
+                configStore.storedRecoveryKeyIvBase64 = storedRecoveryKeyEnc.toBase64Iv()
+                configStore.hasRecoveryKey = true
+
+                Result.success(newKey)
+            } else {
+                val ciphertext = com.example.adere.core.crypto.Base64Codec.decode(configStore.storedRecoveryKeyEncBase64)
+                val iv = com.example.adere.core.crypto.Base64Codec.decode(configStore.storedRecoveryKeyIvBase64)
+                val decrypted = CryptoEngine.decryptString(ciphertext, iv, dek)
+                Result.success(decrypted)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Regenerates a new Master Recovery Key, re-encrypting the active DEK.
+     */
+    suspend fun regenerateRecoveryKey(): Result<String> = withContext(Dispatchers.Default) {
+        val dek = inMemoryDek ?: return@withContext Result.failure(IllegalStateException("Vault must be unlocked to regenerate recovery key."))
+        return@withContext try {
+            val newRecoveryKey = com.example.adere.core.crypto.RecoveryKeyManager.generateRecoveryKey()
+            val normalizedKey = com.example.adere.core.crypto.RecoveryKeyManager.normalizeKey(newRecoveryKey)
+            val recoverySalt = CryptoEngine.generateSalt()
+            val recoveryDerivedKey = CryptoEngine.deriveKey(normalizedKey.toCharArray(), recoverySalt)
+            val recoveryEncryptedDek = CryptoEngine.encrypt(dek, recoveryDerivedKey)
+            val storedRecoveryKeyEnc = CryptoEngine.encryptString(newRecoveryKey, dek)
+
+            configStore.recoverySaltBase64 = com.example.adere.core.crypto.Base64Codec.encode(recoverySalt)
+            configStore.recoveryEncryptedDekBase64 = recoveryEncryptedDek.toBase64Ciphertext()
+            configStore.recoveryEncryptedDekIvBase64 = recoveryEncryptedDek.toBase64Iv()
+            configStore.storedRecoveryKeyEncBase64 = storedRecoveryKeyEnc.toBase64Ciphertext()
+            configStore.storedRecoveryKeyIvBase64 = storedRecoveryKeyEnc.toBase64Iv()
+            configStore.hasRecoveryKey = true
+
+            Result.success(newRecoveryKey)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Emergency vault recovery if the Master Password is forgotten.
+     * Derives DEK from Recovery Key, generates new Master Password key, and re-encrypts DEK.
+     */
+    suspend fun recoverVaultWithKey(recoveryKeyInput: String, newMasterPassword: CharArray): Result<Unit> = withContext(Dispatchers.Default) {
+        val normalized = com.example.adere.core.crypto.RecoveryKeyManager.normalizeKey(recoveryKeyInput)
+        if (!com.example.adere.core.crypto.RecoveryKeyManager.isValidKeyFormat(normalized)) {
+            return@withContext Result.failure(IllegalArgumentException("Invalid recovery key format. Expected 24 alphanumeric characters."))
+        }
+
+        if (!configStore.hasRecoveryKey || configStore.recoveryEncryptedDekBase64.isBlank()) {
+            return@withContext Result.failure(IllegalStateException("No recovery key found for this vault."))
+        }
+
+        return@withContext try {
+            val recoverySalt = com.example.adere.core.crypto.Base64Codec.decode(configStore.recoverySaltBase64)
+            val recoveryCiphertext = com.example.adere.core.crypto.Base64Codec.decode(configStore.recoveryEncryptedDekBase64)
+            val recoveryIv = com.example.adere.core.crypto.Base64Codec.decode(configStore.recoveryEncryptedDekIvBase64)
+
+            // Derive key from Recovery Key
+            val recoveryDerivedKey = CryptoEngine.deriveKey(normalized.toCharArray(), recoverySalt)
+            val recoveredDek = CryptoEngine.decrypt(recoveryCiphertext, recoveryIv, recoveryDerivedKey)
+
+            // Successfully decrypted DEK! Re-encrypt with new Master Password
+            val newMasterSalt = CryptoEngine.generateSalt()
+            val newMasterKey = CryptoEngine.deriveKey(newMasterPassword, newMasterSalt)
+            val newEncryptedDek = CryptoEngine.encrypt(recoveredDek, newMasterKey)
+
+            configStore.masterSaltBase64 = com.example.adere.core.crypto.Base64Codec.encode(newMasterSalt)
+            configStore.encryptedDekBase64 = newEncryptedDek.toBase64Ciphertext()
+            configStore.encryptedDekIvBase64 = newEncryptedDek.toBase64Iv()
+
+            // Update stored recovery key ciphertext with recovered DEK
+            val storedRecoveryKeyEnc = CryptoEngine.encryptString(com.example.adere.core.crypto.RecoveryKeyManager.formatKey(normalized), recoveredDek)
+            configStore.storedRecoveryKeyEncBase64 = storedRecoveryKeyEnc.toBase64Ciphertext()
+            configStore.storedRecoveryKeyIvBase64 = storedRecoveryKeyEnc.toBase64Iv()
+
+            // Re-encrypt Biometric DEK if biometric was enabled
+            if (configStore.isBiometricEnabled) {
+                try {
+                    val biometricEncrypted = keystoreManager.encryptDek(recoveredDek)
+                    configStore.biometricEncryptedDekBase64 = biometricEncrypted.toBase64Ciphertext()
+                    configStore.biometricDekIvBase64 = biometricEncrypted.toBase64Iv()
+                } catch (_: Exception) {
+                    configStore.isBiometricEnabled = false
+                }
+            }
+
+            // Reset lockouts and attempts
+            configStore.failedAttempts = 0
+            configStore.lockoutUntilMs = 0L
+
+            inMemoryDek = recoveredDek
+            lastActiveTime = System.currentTimeMillis()
+            _lockState.value = VaultLockState.Unlocked
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(IllegalArgumentException("Incorrect Master Recovery Key. Verification failed."))
         }
     }
 

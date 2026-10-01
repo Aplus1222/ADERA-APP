@@ -55,8 +55,13 @@ class AdereViewModel(
             }
             val matchesQuery = query.isBlank() ||
                     item.title.contains(query, ignoreCase = true) ||
+                    item.category.title.contains(query, ignoreCase = true) ||
+                    item.category.name.contains(query, ignoreCase = true) ||
                     item.username.contains(query, ignoreCase = true) ||
-                    item.category.title.contains(query, ignoreCase = true)
+                    item.payload.url.contains(query, ignoreCase = true) ||
+                    item.payload.cryptoNetwork.contains(query, ignoreCase = true) ||
+                    item.payload.wifiSsid.contains(query, ignoreCase = true) ||
+                    item.payload.notes.contains(query, ignoreCase = true)
             matchesCategory && matchesQuery
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -97,7 +102,7 @@ class AdereViewModel(
         try {
             com.example.ui.theme.VaultThemePalette.valueOf(configStore.themePalette)
         } catch (e: Exception) {
-            com.example.ui.theme.VaultThemePalette.OBSIDIAN_EMERALD
+            com.example.ui.theme.VaultThemePalette.TOTAL_SECURITY
         }
     )
     val themePalette: StateFlow<com.example.ui.theme.VaultThemePalette> = _themePalette.asStateFlow()
@@ -171,6 +176,24 @@ class AdereViewModel(
     fun unlockWithBiometric(onResult: (Result<Unit>) -> Unit) {
         viewModelScope.launch {
             val res = sessionManager.unlockWithBiometric()
+            onResult(res)
+        }
+    }
+
+    fun recoverVaultWithKey(recoveryKey: String, newMasterPassword: String, onResult: (Result<Unit>) -> Unit) {
+        viewModelScope.launch {
+            val res = sessionManager.recoverVaultWithKey(recoveryKey, newMasterPassword.toCharArray())
+            onResult(res)
+        }
+    }
+
+    fun getActiveRecoveryKey(): Result<String> {
+        return sessionManager.getActiveRecoveryKey()
+    }
+
+    fun regenerateRecoveryKey(onResult: (Result<String>) -> Unit) {
+        viewModelScope.launch {
+            val res = sessionManager.regenerateRecoveryKey()
             onResult(res)
         }
     }

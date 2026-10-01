@@ -53,6 +53,7 @@ object BrandIconHelper {
         BrandInfo("telegram", "Telegram", "https://web.telegram.org", VaultCategory.SOCIAL, R.drawable.ic_brand_telegram, Color(0xFF24A1DE)),
         BrandInfo("youtube", "YouTube", "https://youtube.com", VaultCategory.SOCIAL, R.drawable.ic_brand_youtube, Color(0xFFFF0000)),
         BrandInfo("snapchat", "Snapchat", "https://snapchat.com", VaultCategory.SOCIAL, R.drawable.ic_brand_snapchat, Color(0xFFFFFC00)),
+        BrandInfo("figma", "Figma", "https://figma.com", VaultCategory.WEBSITE, R.drawable.ic_brand_figma, Color(0xFFF24E1E)),
         BrandInfo("discord", "Discord", "https://discord.com", VaultCategory.SOCIAL, R.drawable.ic_brand_discord, Color(0xFF5865F2)),
         BrandInfo("linkedin", "LinkedIn", "https://linkedin.com", VaultCategory.SOCIAL, R.drawable.ic_brand_linkedin, Color(0xFF0A66C2)),
         BrandInfo("reddit", "Reddit", "https://reddit.com", VaultCategory.SOCIAL, R.drawable.ic_brand_reddit, Color(0xFFFF4500)),
@@ -63,9 +64,27 @@ object BrandIconHelper {
         BrandInfo("apple", "Apple ID", "https://appleid.apple.com", VaultCategory.WEBSITE, R.drawable.ic_brand_apple, Color(0xFF1E293B))
     )
 
+    val POPULAR_CRYPTO_BRANDS = listOf(
+        BrandInfo("bitcoin", "Bitcoin Wallet", "https://bitcoin.org", VaultCategory.CRYPTO, R.drawable.ic_brand_bitcoin, Color(0xFFF7931A)),
+        BrandInfo("ethereum", "Ethereum Wallet", "https://ethereum.org", VaultCategory.CRYPTO, R.drawable.ic_brand_ethereum, Color(0xFF627EEA)),
+        BrandInfo("metamask", "MetaMask Wallet", "https://metamask.io", VaultCategory.CRYPTO, R.drawable.ic_brand_metamask, Color(0xFFE2761B)),
+        BrandInfo("binance", "Binance Account", "https://binance.com", VaultCategory.CRYPTO, R.drawable.ic_brand_binance, Color(0xFFF3BA2F)),
+        BrandInfo("seed_phrase", "12/24-Word Seed Phrase", "https://ethereum.org", VaultCategory.CRYPTO, R.drawable.ic_brand_ethereum, Color(0xFF10B981))
+    )
+
+    val POPULAR_EMAIL_BRANDS = listOf(
+        BrandInfo("gmail", "Gmail / Google Account", "https://accounts.google.com", VaultCategory.EMAIL, R.drawable.ic_brand_google, Color(0xFF4285F4)),
+        BrandInfo("outlook", "Outlook / Microsoft", "https://outlook.live.com", VaultCategory.EMAIL, R.drawable.ic_brand_google, Color(0xFF0078D4)),
+        BrandInfo("apple_id", "iCloud / Apple ID", "https://appleid.apple.com", VaultCategory.EMAIL, R.drawable.ic_brand_apple, Color(0xFF1E293B))
+    )
+
     fun resolveBrandDrawable(title: String, url: String? = null): Int? {
         val query = (title + " " + (url ?: "")).lowercase().trim()
         return when {
+            query.contains("bitcoin") || query.contains("btc") -> R.drawable.ic_brand_bitcoin
+            query.contains("ethereum") || query.contains("eth") -> R.drawable.ic_brand_ethereum
+            query.contains("metamask") -> R.drawable.ic_brand_metamask
+            query.contains("binance") || query.contains("bnb") -> R.drawable.ic_brand_binance
             query.contains("instagram") || query.contains("insta") -> R.drawable.ic_brand_instagram
             query.contains("facebook") || query.contains("fb.com") -> R.drawable.ic_brand_facebook
             query.contains("twitter") || query.contains("x.com") || query.contains("x (twitter") -> R.drawable.ic_brand_x_twitter
@@ -75,6 +94,7 @@ object BrandIconHelper {
             query.contains("youtube") || query.contains("youtu.be") -> R.drawable.ic_brand_youtube
             query.contains("linkedin") -> R.drawable.ic_brand_linkedin
             query.contains("discord") -> R.drawable.ic_brand_discord
+            query.contains("figma") -> R.drawable.ic_brand_figma
             query.contains("snapchat") || query.contains("snap") -> R.drawable.ic_brand_snapchat
             query.contains("reddit") -> R.drawable.ic_brand_reddit
             query.contains("google") || query.contains("gmail") -> R.drawable.ic_brand_google

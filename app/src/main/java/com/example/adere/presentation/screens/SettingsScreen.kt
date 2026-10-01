@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Info
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.AlertDialog
@@ -59,7 +61,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.AnnotatedString
+import android.widget.Toast
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -98,15 +104,24 @@ fun SettingsScreen(
     onRestoreBackup: (content: String, passphrase: String, (Result<Int>) -> Unit) -> Unit,
     onExportPdf: (options: PdfExportManager.ExportOptions, isShare: Boolean) -> Unit,
     onVerifyMasterPassword: (password: String, (Result<Unit>) -> Unit) -> Unit,
+    onGetRecoveryKey: () -> Result<String> = { Result.failure(IllegalStateException()) },
+    onRegenerateRecoveryKey: ((Result<String>) -> Unit) -> Unit = {},
     onPanicLock: () -> Unit,
     onResetVault: () -> Unit
 ) {
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+
     var showChangePasswordDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
     var showRestoreDialog by remember { mutableStateOf(false) }
     var showExportPdfDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    var showRecoveryKeyDialog by remember { mutableStateOf(false) }
+    var currentRecoveryKey by remember { mutableStateOf("") }
+    var isRegeneratingKey by remember { mutableStateOf(false) }
+    var showRegenerateConfirmDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -213,6 +228,22 @@ fun SettingsScreen(
                         value = "Re-encrypts vault key",
                         icon = Icons.Default.Lock,
                         onClick = { showChangePasswordDialog = true }
+                    )
+
+                    // Master Recovery Key
+                    SettingsClickableRow(
+                        title = "Master Recovery Key",
+                        value = "View or backup emergency key",
+                        icon = Icons.Default.VpnKey,
+                        onClick = {
+                            val res = onGetRecoveryKey()
+                            if (res.isSuccess) {
+                                currentRecoveryKey = res.getOrNull() ?: ""
+                                showRecoveryKeyDialog = true
+                            } else {
+                                Toast.makeText(context, res.exceptionOrNull()?.message ?: "Unable to view recovery key", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     )
                 }
             }
@@ -497,6 +528,164 @@ fun SettingsScreen(
                 confirmButton = {
                     TextButton(onClick = { showAboutDialog = false }) {
                         Text("Close", color = EmeraldLight)
+                    }
+                },
+                containerColor = CharcoalSurface,
+                shape = RoundedCornerShape(16.dp)
+            )
+        }
+
+        // Dialog: Master Recovery Key
+        if (showRecoveryKeyDialog) {
+            AlertDialog(
+                onDismissRequest = { showRecoveryKeyDialog = false },
+                icon = {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(CharcoalBg),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.VpnKey,
+                            contentDescription = null,
+                            tint = GoldAccent,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                },
+                title = {
+                    Text(
+                        text = "Master Recovery Key",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            color = TextPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                },
+                text = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Text(
+                            text = "If you forget your master password, this 24-character key is the ONLY method to recover access to your stored secrets.",
+                            color = TextSecondary,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+
+                        // Key display box
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(containerColor = CharcoalBg),
+                            border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CharcoalBorder))
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = currentRecoveryKey,
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        color = GoldAccent,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.sp
+                                    ),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                        }
+
+                        // Copy button
+                        OutlinedButton(
+                            onClick = {
+                                clipboardManager.setText(AnnotatedString(currentRecoveryKey))
+                                Toast.makeText(context, "Recovery key copied to clipboard", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp)
+                                .testTag("copy_recovery_key_button"),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = EmeraldLight),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldLight.copy(alpha = 0.5f))
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.ContentCopy,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Copy Recovery Key", fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        // Regenerate button
+                        TextButton(
+                            onClick = { showRegenerateConfirmDialog = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !isRegeneratingKey
+                        ) {
+                            Text(
+                                text = "Regenerate New Key",
+                                color = SecurityOrange,
+                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold)
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { showRecoveryKeyDialog = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                    ) {
+                        Text("Done", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                },
+                containerColor = CharcoalSurface,
+                shape = RoundedCornerShape(18.dp)
+            )
+        }
+
+        // Regenerate confirmation dialog
+        if (showRegenerateConfirmDialog) {
+            AlertDialog(
+                onDismissRequest = { showRegenerateConfirmDialog = false },
+                title = { Text("Regenerate Recovery Key?", color = SecurityOrange, fontWeight = FontWeight.Bold) },
+                text = {
+                    Text(
+                        "Generating a new recovery key will immediately invalidate your previous recovery key. Be sure to record the new key in a safe place.\n\nContinue?",
+                        color = TextSecondary
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showRegenerateConfirmDialog = false
+                            isRegeneratingKey = true
+                            onRegenerateRecoveryKey { res ->
+                                isRegeneratingKey = false
+                                if (res.isSuccess) {
+                                    currentRecoveryKey = res.getOrNull() ?: ""
+                                    Toast.makeText(context, "New recovery key generated!", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, res.exceptionOrNull()?.message ?: "Failed to regenerate", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = SecurityOrange)
+                    ) {
+                        Text("Regenerate Key", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showRegenerateConfirmDialog = false }) {
+                        Text("Cancel", color = TextSecondary)
                     }
                 },
                 containerColor = CharcoalSurface,

@@ -1,0 +1,27 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Figma Logo Shapes -->
+    <!-- Top Left: Red/Orange #F24E1E -->
+    <path
+        android:fillColor="#F24E1E"
+        android:pathData="M8,2C5.79,2 4,3.79 4,6C4,8.21 5.79,10 8,10L12,10L12,2L8,2Z" />
+    <!-- Top Right: Violet/Purple #A259FF -->
+    <path
+        android:fillColor="#FF7262"
+        android:pathData="M16,2C13.79,2 12,3.79 12,6C12,8.21 13.79,10 16,10C18.21,10 20,8.21 20,6C20,3.79 18.21,2 16,2Z" />
+    <!-- Middle Left: Purple #A259FF -->
+    <path
+        android:fillColor="#A259FF"
+        android:pathData="M8,10C5.79,10 4,11.79 4,14C4,16.21 5.79,18 8,18L12,18L12,10L8,10Z" />
+    <!-- Middle Right: Cyan/Blue #1ABCFE -->
+    <path
+        android:fillColor="#1ABCFE"
+        android:pathData="M16,10C13.79,10 12,11.79 12,14C12,16.21 13.79,18 16,18C18.21,18 20,16.21 20,14C20,11.79 18.21,10 16,10Z" />
+    <!-- Bottom Left: Green #0ACF83 -->
+    <path
+        android:fillColor="#0ACF83"
+        android:pathData="M8,18C5.79,18 4,19.79 4,22C4,22 5.79,22 8,22C10.21,22 12,20.21 12,18L8,18Z" />
+</vector>

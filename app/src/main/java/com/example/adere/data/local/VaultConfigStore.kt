@@ -36,6 +36,12 @@ class VaultConfigStore(context: Context) {
         private const val KEY_LOCKOUT_UNTIL = "lockout_until_ms"
         private const val KEY_LANGUAGE = "selected_language"
         private const val KEY_THEME_PALETTE = "selected_theme_palette"
+        private const val KEY_RECOVERY_SALT = "recovery_salt"
+        private const val KEY_RECOVERY_ENCRYPTED_DEK = "recovery_encrypted_dek"
+        private const val KEY_RECOVERY_ENCRYPTED_DEK_IV = "recovery_encrypted_dek_iv"
+        private const val KEY_STORED_RECOVERY_KEY_ENC = "stored_recovery_key_enc"
+        private const val KEY_STORED_RECOVERY_KEY_IV = "stored_recovery_key_iv"
+        private const val KEY_HAS_RECOVERY_KEY = "has_recovery_key"
     }
 
     var isInitialized: Boolean
@@ -91,8 +97,32 @@ class VaultConfigStore(context: Context) {
         set(value) = prefs.edit().putString(KEY_LANGUAGE, value).apply()
 
     var themePalette: String
-        get() = prefs.getString(KEY_THEME_PALETTE, "OBSIDIAN_EMERALD") ?: "OBSIDIAN_EMERALD"
+        get() = prefs.getString(KEY_THEME_PALETTE, "TOTAL_SECURITY") ?: "TOTAL_SECURITY"
         set(value) = prefs.edit().putString(KEY_THEME_PALETTE, value).apply()
+
+    var recoverySaltBase64: String
+        get() = prefs.getString(KEY_RECOVERY_SALT, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_RECOVERY_SALT, value).apply()
+
+    var recoveryEncryptedDekBase64: String
+        get() = prefs.getString(KEY_RECOVERY_ENCRYPTED_DEK, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_RECOVERY_ENCRYPTED_DEK, value).apply()
+
+    var recoveryEncryptedDekIvBase64: String
+        get() = prefs.getString(KEY_RECOVERY_ENCRYPTED_DEK_IV, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_RECOVERY_ENCRYPTED_DEK_IV, value).apply()
+
+    var storedRecoveryKeyEncBase64: String
+        get() = prefs.getString(KEY_STORED_RECOVERY_KEY_ENC, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_STORED_RECOVERY_KEY_ENC, value).apply()
+
+    var storedRecoveryKeyIvBase64: String
+        get() = prefs.getString(KEY_STORED_RECOVERY_KEY_IV, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_STORED_RECOVERY_KEY_IV, value).apply()
+
+    var hasRecoveryKey: Boolean
+        get() = prefs.getBoolean(KEY_HAS_RECOVERY_KEY, false)
+        set(value) = prefs.edit().putBoolean(KEY_HAS_RECOVERY_KEY, value).apply()
 
     fun resetVault() {
         prefs.edit().clear().apply()

@@ -24,6 +24,14 @@ data class VaultItemPayload(
     val wifiSsid: String = "",
     val wifiPassword: String = "",
     val wifiSecurityType: String = "WPA2/WPA3",
+    val cardNumber: String = "",
+    val cardExpiry: String = "",
+    val cardCvv: String = "",
+    val cardHolder: String = "",
+    val cardBrand: String = "",
+    val bankName: String = "",
+    val docType: String = "",
+    val docNumber: String = "",
     val recoveryCodes: List<String> = emptyList(),
     val customFields: Map<String, String> = emptyMap()
 ) {
@@ -43,6 +51,14 @@ data class VaultItemPayload(
         json.put("wifiSsid", wifiSsid)
         json.put("wifiPassword", wifiPassword)
         json.put("wifiSecurityType", wifiSecurityType)
+        json.put("cardNumber", cardNumber)
+        json.put("cardExpiry", cardExpiry)
+        json.put("cardCvv", cardCvv)
+        json.put("cardHolder", cardHolder)
+        json.put("cardBrand", cardBrand)
+        json.put("bankName", bankName)
+        json.put("docType", docType)
+        json.put("docNumber", docNumber)
 
         val codesArray = JSONArray()
         for (code in recoveryCodes) {
@@ -97,6 +113,14 @@ data class VaultItemPayload(
                     wifiSsid = json.optString("wifiSsid", ""),
                     wifiPassword = json.optString("wifiPassword", ""),
                     wifiSecurityType = json.optString("wifiSecurityType", "WPA2/WPA3"),
+                    cardNumber = json.optString("cardNumber", custom["cardNumber"] ?: ""),
+                    cardExpiry = json.optString("cardExpiry", custom["cardExpiry"] ?: ""),
+                    cardCvv = json.optString("cardCvv", custom["cardCvv"] ?: ""),
+                    cardHolder = json.optString("cardHolder", custom["cardHolder"] ?: ""),
+                    cardBrand = json.optString("cardBrand", custom["cardBrand"] ?: ""),
+                    bankName = json.optString("bankName", custom["bankName"] ?: ""),
+                    docType = json.optString("docType", custom["docType"] ?: ""),
+                    docNumber = json.optString("docNumber", custom["docNumber"] ?: ""),
                     recoveryCodes = codes,
                     customFields = custom
                 )

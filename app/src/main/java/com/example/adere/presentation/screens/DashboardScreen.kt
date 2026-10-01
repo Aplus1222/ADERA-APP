@@ -1,5 +1,7 @@
 package com.example.adere.presentation.screens
 
+import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,66 +13,72 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Note
-import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CurrencyBitcoin
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.VpnKey
-import androidx.compose.material.icons.filled.Wifi
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.NotificationsNone
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import com.example.adere.presentation.components.VaultItemAvatar
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.adere.core.crypto.PasswordHealthAnalyzer
 import com.example.adere.domain.model.VaultCategory
 import com.example.adere.domain.model.VaultItem
-import com.example.adere.presentation.components.AdereTopBar
-import com.example.ui.theme.CharcoalBg
-import com.example.ui.theme.CharcoalBorder
-import com.example.ui.theme.CharcoalSurface
-import com.example.ui.theme.CharcoalSurfaceVariant
-import com.example.ui.theme.EmeraldContainer
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.GoldAccent
-import com.example.ui.theme.SecurityOrange
-import com.example.ui.theme.SecurityRed
-import com.example.ui.theme.SecurityYellow
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
+import com.example.adere.presentation.components.BrandIconHelper
+import com.example.ui.theme.CategoryAppsYellow
+import com.example.ui.theme.CategoryCardTeal
+import com.example.ui.theme.CategorySocialBlue
+import com.example.ui.theme.CleanBg
+import com.example.ui.theme.CleanBorder
+import com.example.ui.theme.CleanSurface
+import com.example.ui.theme.CleanSurfaceVariant
+import com.example.ui.theme.TextDarkMuted
+import com.example.ui.theme.TextDarkPrimary
+import com.example.ui.theme.TextDarkSecondary
+import com.example.ui.theme.TotalSecurityPrimary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,156 +87,179 @@ fun DashboardScreen(
     healthReport: PasswordHealthAnalyzer.VaultHealthReport,
     onNavigateToItemDetail: (String) -> Unit,
     onNavigateToAddItem: (VaultCategory) -> Unit,
-    onNavigateToGenerator: () -> Unit,
     onNavigateToSecurity: () -> Unit,
     onNavigateToCategory: (VaultCategory) -> Unit,
     onLockClick: () -> Unit
 ) {
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedFilterCategory by remember { mutableStateOf<VaultCategory?>(null) }
+
+    val displayedItems = remember(items, searchQuery, selectedFilterCategory) {
+        var list = items
+        if (selectedFilterCategory != null) {
+            list = list.filter { it.category == selectedFilterCategory }
+        }
+        if (searchQuery.isNotBlank()) {
+            list = list.filter {
+                it.title.contains(searchQuery, ignoreCase = true) ||
+                it.category.title.contains(searchQuery, ignoreCase = true) ||
+                it.category.name.contains(searchQuery, ignoreCase = true) ||
+                it.username.contains(searchQuery, ignoreCase = true) ||
+                it.payload.url.contains(searchQuery, ignoreCase = true)
+            }
+        }
+        list
+    }
+
     Scaffold(
-        topBar = {
-            AdereTopBar(
-                title = "Adere Vault",
-                subtitle = "Offline Encrypted Storage",
-                onLockClick = onLockClick
-            )
-        },
-        containerColor = CharcoalBg
+        containerColor = CleanBg
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             item {
-                Spacer(modifier = Modifier.height(4.dp))
-                // Vault Status Banner
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("dashboard_status_banner"),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = CharcoalSurface),
-                    border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(EmeraldLight))
+                Spacer(modifier = Modifier.height(6.dp))
+                // Top Header Row matching Screen 2 in image.png
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    IconButton(
+                        onClick = onLockClick,
+                        modifier = Modifier.size(40.dp)
                     ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Menu",
+                            tint = TextDarkPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = "Hello, Nicky",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = TextDarkPrimary,
+                            fontSize = 20.sp
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    // Notification Bell with Alert Dot
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .clickable(onClick = onNavigateToSecurity),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.NotificationsNone,
+                            contentDescription = "Notifications",
+                            tint = TextDarkPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        // Alert dot
                         Box(
                             modifier = Modifier
-                                .size(44.dp)
+                                .size(8.dp)
+                                .align(Alignment.TopEnd)
+                                .offset(x = (-6).dp, y = 6.dp)
                                 .clip(CircleShape)
-                                .background(EmeraldContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Shield,
-                                contentDescription = null,
-                                tint = EmeraldLight,
-                                modifier = Modifier.size(26.dp)
+                                .background(Color(0xFFEF4444))
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // User Profile Avatar
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFDCE2FA))
+                            .border(1.5.dp, TotalSecurityPrimary, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "N",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = TotalSecurityPrimary
                             )
-                        }
-                        Spacer(modifier = Modifier.width(14.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Your vault is protected",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextPrimary
-                                )
-                            )
-                            Text(
-                                text = "AES-256-GCM Hardware Encrypted",
-                                style = MaterialTheme.typography.bodySmall.copy(color = EmeraldLight)
-                            )
-                        }
+                        )
                     }
                 }
             }
 
-            // Stat Cards Grid
+            // Search Bar & Filter Button
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    StatMetricCard(
-                        count = items.size.toString(),
-                        label = "Total Items",
-                        color = EmeraldLight,
-                        modifier = Modifier.weight(1f)
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = {
+                            Text("Search", color = TextDarkMuted, fontSize = 15.sp)
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Search",
+                                tint = TextDarkMuted
+                            )
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = CleanSurfaceVariant,
+                            unfocusedContainerColor = CleanSurfaceVariant,
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedTextColor = TextDarkPrimary,
+                            unfocusedTextColor = TextDarkPrimary
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("dashboard_search_input")
                     )
-                    StatMetricCard(
-                        count = healthReport.weakCount.toString(),
-                        label = "Weak",
-                        color = if (healthReport.weakCount > 0) SecurityRed else TextSecondary,
-                        modifier = Modifier.weight(1f)
-                    )
-                    StatMetricCard(
-                        count = healthReport.reusedCount.toString(),
-                        label = "Reused",
-                        color = if (healthReport.reusedCount > 0) SecurityOrange else TextSecondary,
-                        modifier = Modifier.weight(1f)
-                    )
-                    StatMetricCard(
-                        count = healthReport.oldCount.toString(),
-                        label = "Old",
-                        color = if (healthReport.oldCount > 0) SecurityYellow else TextSecondary,
-                        modifier = Modifier.weight(1f)
-                    )
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    // Indigo Filter Button
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(TotalSecurityPrimary)
+                            .clickable {
+                                selectedFilterCategory = if (selectedFilterCategory == null) VaultCategory.SOCIAL else null
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Tune,
+                            contentDescription = "Filter",
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                 }
             }
 
-            // Quick Actions Section
-            item {
-                Text(
-                    text = "Quick Actions",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    QuickActionButton(
-                        title = "+ Password",
-                        icon = Icons.Default.Key,
-                        onClick = { onNavigateToAddItem(VaultCategory.SOCIAL) },
-                        modifier = Modifier.weight(1f)
-                    )
-                    QuickActionButton(
-                        title = "Crypto Wallet",
-                        icon = Icons.Default.CurrencyBitcoin,
-                        onClick = { onNavigateToAddItem(VaultCategory.CRYPTO) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    QuickActionButton(
-                        title = "Secure Note",
-                        icon = Icons.AutoMirrored.Filled.Note,
-                        onClick = { onNavigateToAddItem(VaultCategory.NOTES) },
-                        modifier = Modifier.weight(1f)
-                    )
-                    QuickActionButton(
-                        title = "+ Category",
-                        icon = Icons.Default.Add,
-                        onClick = onNavigateToGenerator,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            // Security Health Summary Card
+            // Manage Password Section Header
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -236,230 +267,202 @@ fun DashboardScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Security Health",
-                        style = MaterialTheme.typography.titleMedium.copy(
+                        text = "Manage Password",
+                        style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
-                            color = TextPrimary
+                            color = TextDarkPrimary,
+                            fontSize = 18.sp
                         )
                     )
                     Text(
-                        text = "View details",
-                        style = MaterialTheme.typography.labelMedium.copy(color = EmeraldLight),
-                        modifier = Modifier
-                            .clickable(onClick = onNavigateToSecurity)
-                            .testTag("dashboard_view_security_details")
+                        text = "See All",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = TextDarkSecondary,
+                            fontWeight = FontWeight.Medium
+                        ),
+                        modifier = Modifier.clickable { onNavigateToCategory(VaultCategory.ALL) }
                     )
-                }
-                Spacer(modifier = Modifier.height(10.dp))
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onNavigateToSecurity),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = CharcoalSurface),
-                    border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CharcoalBorder))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val icon = if (healthReport.weakCount == 0 && healthReport.reusedCount == 0)
-                            Icons.Rounded.CheckCircle else Icons.Rounded.Warning
-                        val tint = if (healthReport.weakCount == 0 && healthReport.reusedCount == 0)
-                            EmeraldLight else SecurityOrange
-
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            tint = tint,
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Spacer(modifier = Modifier.width(14.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = healthReport.overallStatus.label,
-                                style = MaterialTheme.typography.titleSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextPrimary
-                                )
-                            )
-                            Text(
-                                text = "${healthReport.healthScorePercent}% vault hygiene score",
-                                style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
-                            )
-                        }
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                            contentDescription = null,
-                            tint = TextMuted,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
                 }
             }
 
-            // Categories Section
+            // 3 Category Tiles (Social, Apps, Card)
             item {
-                Text(
-                    text = "Vault Categories",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    val quickCategories = listOf(
-                        VaultCategory.ALL,
-                        VaultCategory.FAVORITES,
-                        VaultCategory.SOCIAL,
-                        VaultCategory.EMAIL,
-                        VaultCategory.BANKING,
-                        VaultCategory.CRYPTO,
-                        VaultCategory.NOTES,
-                        VaultCategory.WIFI
+                    // Tile 1: Social
+                    CategoryTile(
+                        title = "Social",
+                        backgroundColor = CategorySocialBlue,
+                        icon = Icons.Default.Share,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigateToCategory(VaultCategory.SOCIAL) }
                     )
-                    items(quickCategories) { cat ->
-                        CategorySummaryPill(
-                            category = cat,
-                            onClick = { onNavigateToCategory(cat) }
-                        )
-                    }
+
+                    // Tile 2: Apps
+                    CategoryTile(
+                        title = "Apps",
+                        backgroundColor = CategoryAppsYellow,
+                        icon = Icons.Default.Smartphone,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigateToCategory(VaultCategory.WEBSITE) }
+                    )
+
+                    // Tile 3: Card
+                    CategoryTile(
+                        title = "Card",
+                        backgroundColor = CategoryCardTeal,
+                        icon = Icons.Default.CreditCard,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigateToCategory(VaultCategory.BANKING) }
+                    )
                 }
             }
 
-            // Recent Vault Items
+            // Recently Used Section Header
             item {
-                Text(
-                    text = "Recent Vault Items",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Recently Used",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = TextDarkPrimary,
+                            fontSize = 18.sp
+                        )
                     )
-                )
-                Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = "Show all",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = TextDarkSecondary,
+                            fontWeight = FontWeight.Medium
+                        ),
+                        modifier = Modifier.clickable { onNavigateToCategory(VaultCategory.ALL) }
+                    )
+                }
             }
 
-            if (items.isEmpty()) {
+            // Recently Used Items List
+            if (displayedItems.isEmpty()) {
+                // Friendly sample items when vault is clean
                 item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = CharcoalSurface),
-                        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CharcoalBorder))
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Shield,
-                                contentDescription = null,
-                                tint = TextMuted,
-                                modifier = Modifier.size(36.dp)
-                            )
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Text(
-                                text = "Your vault is empty",
-                                style = MaterialTheme.typography.titleSmall.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = TextPrimary
-                                )
-                            )
-                            Text(
-                                text = "Add your first account, password or wallet.",
-                                style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
-                            )
-                        }
-                    }
+                    SamplePasswordRow(
+                        title = "Facebook",
+                        username = "user.email@gmail.com",
+                        iconRes = R.drawable.ic_brand_facebook,
+                        onCopy = {
+                            clipboardManager.setText(AnnotatedString("fb_secure_pass!"))
+                            Toast.makeText(context, "Copied Facebook password", Toast.LENGTH_SHORT).show()
+                        },
+                        onClick = { onNavigateToAddItem(VaultCategory.SOCIAL) }
+                    )
+                }
+                item {
+                    SamplePasswordRow(
+                        title = "Figma",
+                        username = "user.email@gmail.com",
+                        iconRes = R.drawable.ic_brand_figma,
+                        onCopy = {
+                            clipboardManager.setText(AnnotatedString("figma_vault_pass#"))
+                            Toast.makeText(context, "Copied Figma password", Toast.LENGTH_SHORT).show()
+                        },
+                        onClick = { onNavigateToAddItem(VaultCategory.WEBSITE) }
+                    )
+                }
+                item {
+                    SamplePasswordRow(
+                        title = "Snapchat",
+                        username = "user.email@gmail.com",
+                        iconRes = R.drawable.ic_brand_snapchat,
+                        onCopy = {
+                            clipboardManager.setText(AnnotatedString("snap_safe_pass*"))
+                            Toast.makeText(context, "Copied Snapchat password", Toast.LENGTH_SHORT).show()
+                        },
+                        onClick = { onNavigateToAddItem(VaultCategory.SOCIAL) }
+                    )
+                }
+                item {
+                    SamplePasswordRow(
+                        title = "LinkedIn",
+                        username = "user.email@gmail.com",
+                        iconRes = R.drawable.ic_brand_linkedin,
+                        onCopy = {
+                            clipboardManager.setText(AnnotatedString("li_pro_secret%"))
+                            Toast.makeText(context, "Copied LinkedIn password", Toast.LENGTH_SHORT).show()
+                        },
+                        onClick = { onNavigateToAddItem(VaultCategory.SOCIAL) }
+                    )
                 }
             } else {
-                val recent = items.take(5)
-                items(recent) { item ->
-                    RecentItemRow(
+                items(displayedItems, key = { it.id }) { item ->
+                    RealPasswordItemRow(
                         item = item,
-                        onClick = { onNavigateToItemDetail(item.id) }
+                        onClick = { onNavigateToItemDetail(item.id) },
+                        onCopy = {
+                            clipboardManager.setText(AnnotatedString(item.payload.password))
+                            Toast.makeText(context, "Copied password for ${item.title}", Toast.LENGTH_SHORT).show()
+                        }
                     )
                 }
             }
 
             item {
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(72.dp))
             }
         }
     }
 }
 
 @Composable
-private fun StatMetricCard(
-    count: String,
-    label: String,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = CharcoalSurface),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CharcoalBorder))
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = count,
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    color = color
-                )
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall.copy(color = TextSecondary),
-                maxLines = 1
-            )
-        }
-    }
-}
-
-@Composable
-private fun QuickActionButton(
+private fun CategoryTile(
     title: String,
-    icon: ImageVector,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    backgroundColor: Color,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
     Card(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
+            .height(108.dp)
+            .clip(RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
-            .testTag("quick_action_${title.lowercase().replace(" ", "_")}"),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = CharcoalSurface),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CharcoalBorder))
+            .shadow(4.dp, RoundedCornerShape(18.dp), spotColor = backgroundColor.copy(alpha = 0.3f)),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = EmeraldLight,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(10.dp))
+            // White circular icon badge
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.25f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    fontSize = 14.sp
                 )
             )
         }
@@ -467,74 +470,165 @@ private fun QuickActionButton(
 }
 
 @Composable
-private fun CategorySummaryPill(
-    category: VaultCategory,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(CharcoalSurface)
-            .border(1.dp, CharcoalBorder, RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = category.title,
-            style = MaterialTheme.typography.labelMedium.copy(color = TextPrimary)
-        )
-    }
-}
-
-@Composable
-private fun RecentItemRow(
-    item: VaultItem,
+private fun SamplePasswordRow(
+    title: String,
+    username: String,
+    iconRes: Int,
+    onCopy: () -> Unit,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .testTag("recent_item_${item.id}"),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = CharcoalSurface),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CharcoalBorder))
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CleanSurface),
+        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CleanBorder))
     ) {
         Row(
-            modifier = Modifier.padding(14.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            VaultItemAvatar(
-                title = item.title,
-                category = item.category,
-                url = item.payload.url,
-                size = 38.dp,
-                iconSize = 20.dp,
-                cornerRadius = 8.dp
-            )
+            // Brand Icon
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(CleanSurfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = title,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+
             Spacer(modifier = Modifier.width(14.dp))
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = item.title,
-                    style = MaterialTheme.typography.titleSmall.copy(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = TextDarkPrimary
                     )
                 )
-                if (item.username.isNotBlank()) {
-                    Text(
-                        text = item.username,
-                        style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
+                Text(
+                    text = username,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = TextDarkSecondary
+                    )
+                )
+            }
+
+            IconButton(onClick = onCopy) {
+                Icon(
+                    imageVector = Icons.Default.ContentCopy,
+                    contentDescription = "Copy password",
+                    tint = TextDarkMuted,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            IconButton(onClick = onClick) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "Options",
+                    tint = TextDarkMuted,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RealPasswordItemRow(
+    item: VaultItem,
+    onClick: () -> Unit,
+    onCopy: () -> Unit
+) {
+    val brandDrawable = remember(item.title, item.payload.url) {
+        BrandIconHelper.resolveBrandDrawable(item.title, item.payload.url)
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .testTag("vault_item_${item.id}"),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CleanSurface),
+        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CleanBorder))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(CleanSurfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                if (brandDrawable != null) {
+                    Image(
+                        painter = painterResource(id = brandDrawable),
+                        contentDescription = item.title,
+                        modifier = Modifier.size(26.dp)
+                    )
+                } else {
+                    Icon(
+                        imageVector = BrandIconHelper.getCategoryFallbackIcon(item.category),
+                        contentDescription = item.title,
+                        tint = TotalSecurityPrimary,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
-            if (item.isFavorite) {
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = item.title,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = TextDarkPrimary
+                    )
+                )
+                Text(
+                    text = if (item.username.isNotBlank()) item.username else item.category.title,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = TextDarkSecondary
+                    ),
+                    maxLines = 1
+                )
+            }
+
+            IconButton(onClick = onCopy) {
                 Icon(
-                    imageVector = Icons.Default.Star,
-                    contentDescription = "Favorite",
-                    tint = GoldAccent,
-                    modifier = Modifier.size(18.dp)
+                    imageVector = Icons.Default.ContentCopy,
+                    contentDescription = "Copy password",
+                    tint = TextDarkMuted,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            IconButton(onClick = onClick) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "Options",
+                    tint = TextDarkMuted,
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }

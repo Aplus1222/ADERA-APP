@@ -79,7 +79,7 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             val themePalette by viewModel.themePalette.collectAsStateWithLifecycle()
-            AdereTheme(palette = themePalette, darkTheme = true) {
+            AdereTheme(palette = themePalette) {
                 AdereApp(
                     viewModel = viewModel,
                     onTriggerBiometrics = { triggerBiometricPrompt() },
@@ -152,28 +152,43 @@ class MainActivity : FragmentActivity() {
 
     private fun triggerBiometricPrompt() {
         val biometricManager = BiometricManager.from(this)
-        val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                BiometricManager.Authenticators.BIOMETRIC_WEAK or
-                BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        val hasCredential = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R
+        val authenticators = if (hasCredential) {
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        } else {
+            BiometricManager.Authenticators.BIOMETRIC_STRONG
+        }
 
         val canAuth = biometricManager.canAuthenticate(authenticators)
-        if (canAuth != BiometricManager.BIOMETRIC_SUCCESS) {
-            val reason = when (canAuth) {
-                BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> "No fingerprint or face enrolled in device settings. Please use your Master Password."
-                BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> "Biometric hardware is not available. Please use your Master Password."
-                BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> "Biometric hardware is currently busy. Please use your Master Password."
-                else -> "Biometric unavailable. Please use your Master Password."
+        val canStrongOnly = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+
+        if (canAuth != BiometricManager.BIOMETRIC_SUCCESS && canStrongOnly != BiometricManager.BIOMETRIC_SUCCESS) {
+            val reason = when {
+                canAuth == BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED || canStrongOnly == BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED ->
+                    "No fingerprint or face unlock enrolled on device. Please unlock with your Master Password."
+                canAuth == BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE || canStrongOnly == BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE ->
+                    "Biometric hardware not detected. Please unlock with your Master Password."
+                canAuth == BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE || canStrongOnly == BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE ->
+                    "Biometric sensor currently unavailable. Please unlock with your Master Password."
+                else -> "Biometric authentication unavailable. Please unlock with your Master Password."
             }
             Toast.makeText(this, reason, Toast.LENGTH_LONG).show()
             return
         }
 
         val executor = ContextCompat.getMainExecutor(this)
-        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+        val promptBuilder = BiometricPrompt.PromptInfo.Builder()
             .setTitle(getString(R.string.biometric_prompt_title))
             .setSubtitle(getString(R.string.biometric_prompt_subtitle))
-            .setAllowedAuthenticators(authenticators)
-            .build()
+
+        if (canAuth == BiometricManager.BIOMETRIC_SUCCESS && hasCredential) {
+            promptBuilder.setAllowedAuthenticators(authenticators)
+        } else {
+            promptBuilder.setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+            promptBuilder.setNegativeButtonText(getString(R.string.biometric_use_password))
+        }
+
+        val promptInfo = promptBuilder.build()
 
         val biometricPrompt = BiometricPrompt(
             this,
@@ -183,11 +198,11 @@ class MainActivity : FragmentActivity() {
                     super.onAuthenticationSucceeded(result)
                     viewModel.unlockWithBiometric { unlockResult ->
                         if (unlockResult.isSuccess) {
-                            Toast.makeText(this@MainActivity, "Vault unlocked", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@MainActivity, "Vault unlocked with biometrics", Toast.LENGTH_SHORT).show()
                         } else {
                             Toast.makeText(
                                 this@MainActivity,
-                                unlockResult.exceptionOrNull()?.message ?: "Biometric unlock failed",
+                                unlockResult.exceptionOrNull()?.message ?: "Biometric unlock failed. Please use Master Password.",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
@@ -196,7 +211,7 @@ class MainActivity : FragmentActivity() {
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
-                    // User canceled or used master password fallback
+                    // If user tapped negative button or canceled, allow graceful fallback to master password
                     if (errorCode != BiometricPrompt.ERROR_USER_CANCELED &&
                         errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON
                     ) {
@@ -206,7 +221,7 @@ class MainActivity : FragmentActivity() {
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
-                    Toast.makeText(this@MainActivity, "Biometric authentication failed", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, "Biometric authentication failed. Try again.", Toast.LENGTH_SHORT).show()
                 }
             }
         )

@@ -37,7 +37,6 @@ import com.example.adere.presentation.screens.DashboardScreen
 import com.example.adere.presentation.screens.ItemDetailScreen
 import com.example.adere.presentation.screens.LockScreen
 import com.example.adere.presentation.screens.OnboardingAndSetupScreen
-import com.example.adere.presentation.screens.PasswordGeneratorScreen
 import com.example.adere.presentation.screens.SecurityHealthScreen
 import com.example.adere.presentation.screens.SettingsScreen
 import com.example.adere.presentation.viewmodels.AdereViewModel
@@ -76,8 +75,6 @@ fun AdereApp(
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
     val healthReport by viewModel.healthReport.collectAsStateWithLifecycle()
     val totpMap by viewModel.totpMap.collectAsStateWithLifecycle()
-    val generatedResult by viewModel.generatedResult.collectAsStateWithLifecycle()
-    val generatorOptions by viewModel.generatorOptions.collectAsStateWithLifecycle()
 
     val biometricEnabled by viewModel.biometricEnabled.collectAsStateWithLifecycle()
     val autoLockSeconds by viewModel.autoLockSeconds.collectAsStateWithLifecycle()
@@ -114,7 +111,8 @@ fun AdereApp(
                 },
                 onSetupVault = { pass, bio, cb ->
                     viewModel.initializeMasterPassword(pass, bio, cb)
-                }
+                },
+                onGetActiveRecoveryKey = { viewModel.getActiveRecoveryKey() }
             )
         }
 
@@ -124,6 +122,14 @@ fun AdereApp(
                 onTriggerBiometrics = onTriggerBiometrics,
                 onUnlockWithPassword = { pass, cb ->
                     viewModel.unlockWithPassword(pass, cb)
+                },
+                onRecoverWithKey = { key, newPass, cb ->
+                    viewModel.recoverVaultWithKey(key, newPass) { res ->
+                        if (res.isSuccess) {
+                            Toast.makeText(context, "Vault recovered with Master Key!", Toast.LENGTH_SHORT).show()
+                        }
+                        cb(res)
+                    }
                 },
                 onResetVault = {
                     viewModel.resetVault {
@@ -224,51 +230,13 @@ fun AdereApp(
                 // Main Bottom Tabbed Navigation
                 Scaffold(
                     bottomBar = {
-                        NavigationBar(
-                            containerColor = CharcoalSurface,
-                            contentColor = TextSecondary
-                        ) {
-                            NavigationBarItem(
-                                selected = currentTab == NavDestination.HOME,
-                                onClick = { currentTab = NavDestination.HOME },
-                                icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                                label = { Text("Home") },
-                                colors = navItemColors(),
-                                modifier = Modifier.testTag("nav_tab_home")
-                            )
-                            NavigationBarItem(
-                                selected = currentTab == NavDestination.VAULT,
-                                onClick = { currentTab = NavDestination.VAULT },
-                                icon = { Icon(Icons.Default.VpnKey, contentDescription = "Vault") },
-                                label = { Text("Vault") },
-                                colors = navItemColors(),
-                                modifier = Modifier.testTag("nav_tab_vault")
-                            )
-                            NavigationBarItem(
-                                selected = currentTab == NavDestination.ADD,
-                                onClick = { currentTab = NavDestination.ADD },
-                                icon = { Icon(Icons.Default.AddCircle, contentDescription = "Add by Category") },
-                                label = { Text("Add") },
-                                colors = navItemColors(),
-                                modifier = Modifier.testTag("nav_tab_add")
-                            )
-                            NavigationBarItem(
-                                selected = currentTab == NavDestination.SECURITY,
-                                onClick = { currentTab = NavDestination.SECURITY },
-                                icon = { Icon(Icons.Default.Shield, contentDescription = "Security") },
-                                label = { Text("Security") },
-                                colors = navItemColors(),
-                                modifier = Modifier.testTag("nav_tab_security")
-                            )
-                            NavigationBarItem(
-                                selected = currentTab == NavDestination.SETTINGS,
-                                onClick = { currentTab = NavDestination.SETTINGS },
-                                icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-                                label = { Text("Settings") },
-                                colors = navItemColors(),
-                                modifier = Modifier.testTag("nav_tab_settings")
-                            )
-                        }
+                        com.example.adere.presentation.components.AdereTotalSecurityBottomBar(
+                            currentTab = currentTab,
+                            onSelectTab = { currentTab = it },
+                            onCenterAddClick = {
+                                currentTab = NavDestination.ADD
+                            }
+                        )
                     },
                     containerColor = CharcoalBg
                 ) { innerPadding ->
@@ -287,7 +255,6 @@ fun AdereApp(
                                         itemCategoryForAdd = cat
                                         isAddingItem = true
                                     },
-                                    onNavigateToGenerator = { currentTab = NavDestination.ADD },
                                     onNavigateToSecurity = { currentTab = NavDestination.SECURITY },
                                     onNavigateToCategory = { cat ->
                                         viewModel.selectCategory(cat)
@@ -346,7 +313,8 @@ fun AdereApp(
                                     healthReport = healthReport,
                                     items = rawItems,
                                     onItemClick = { id -> selectedItemIdForDetail = id },
-                                    onLockClick = { viewModel.lockVault() }
+                                    onLockClick = { viewModel.lockVault() },
+                                    onBackClick = { currentTab = NavDestination.HOME }
                                 )
                             }
 
@@ -396,6 +364,8 @@ fun AdereApp(
                                             cb(res)
                                         }
                                     },
+                                    onGetRecoveryKey = { viewModel.getActiveRecoveryKey() },
+                                    onRegenerateRecoveryKey = { cb -> viewModel.regenerateRecoveryKey(cb) },
                                     onPanicLock = {
                                         viewModel.lockVault()
                                         Toast.makeText(context, "Vault Locked", Toast.LENGTH_SHORT).show()
