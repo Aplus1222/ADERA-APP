@@ -309,6 +309,8 @@ class RoomVaultPdfExporter(
                 if (!item.totpSecret.isNullOrBlank()) estimatedHeight += 14f
                 if (options.includeCryptoSecrets && item.seedPhraseChars != null) estimatedHeight += 24f
                 if (options.includeCryptoSecrets && item.privateKeyChars != null) estimatedHeight += 24f
+                if (!item.wifiSsid.isNullOrBlank()) estimatedHeight += 14f
+                if (options.includePasswords && item.wifiPasswordChars != null) estimatedHeight += 16f
                 if (options.includeRecoveryCodes && !item.recoveryCodes.isNullOrEmpty()) estimatedHeight += 16f
                 if (options.includeNotes && !item.notes.isNullOrBlank()) estimatedHeight += 20f
 
@@ -337,7 +339,7 @@ class RoomVaultPdfExporter(
                 // Category Badge & Title
                 boldPaint.textSize = 10f
                 boldPaint.color = Color.rgb(15, 23, 42)
-                val categoryTag = "[${item.category.name}]"
+                val categoryTag = "[${item.category.title.uppercase()}]"
                 canvas.drawText(categoryTag, MARGIN + 8f, lineY, emeraldPaint)
 
                 val tagWidth = emeraldPaint.measureText(categoryTag) + 6f
@@ -402,6 +404,35 @@ class RoomVaultPdfExporter(
                     canvas.drawText(seedString, MARGIN + 8f + labelWidth, lineY, monoPaint)
                 }
 
+                // Crypto Private Key
+                if (options.includeCryptoSecrets && item.privateKeyChars != null) {
+                    lineY += 14f
+                    labelPaint.textSize = 8.5f
+                    canvas.drawText("Private Key: ", MARGIN + 8f, lineY, labelPaint)
+                    val labelWidth = labelPaint.measureText("Private Key: ")
+                    val pkString = String(item.privateKeyChars!!)
+                    val truncatedPk = if (pkString.length > 55) pkString.take(52) + "…" else pkString
+                    canvas.drawText(truncatedPk, MARGIN + 8f + labelWidth, lineY, monoPaint)
+                }
+
+                // WiFi Network
+                if (!item.wifiSsid.isNullOrBlank()) {
+                    lineY += 13f
+                    labelPaint.textSize = 8.5f
+                    canvas.drawText("WiFi SSID: ", MARGIN + 8f, lineY, labelPaint)
+                    val labelWidth = labelPaint.measureText("WiFi SSID: ")
+                    textPaint.color = Color.rgb(30, 41, 59)
+                    canvas.drawText(item.wifiSsid!!, MARGIN + 8f + labelWidth, lineY, textPaint)
+                }
+                if (options.includePasswords && item.wifiPasswordChars != null) {
+                    lineY += 14f
+                    labelPaint.textSize = 8.5f
+                    canvas.drawText("WiFi Password: ", MARGIN + 8f, lineY, labelPaint)
+                    val labelWidth = labelPaint.measureText("WiFi Password: ")
+                    val wifiPass = String(item.wifiPasswordChars!!)
+                    canvas.drawText(wifiPass, MARGIN + 8f + labelWidth, lineY, monoPaint)
+                }
+
                 // Recovery Codes
                 if (options.includeRecoveryCodes && !item.recoveryCodes.isNullOrEmpty()) {
                     lineY += 13f
@@ -428,6 +459,9 @@ class RoomVaultPdfExporter(
             drawFooter()
             document.finishPage(page)
             document.writeTo(outputStream)
+            try {
+                outputStream.flush()
+            } catch (_: Exception) {}
             document.close()
         } catch (e: Exception) {
             // Graceful fallback for headless JVM/Robolectric test runners without native PDFium engine

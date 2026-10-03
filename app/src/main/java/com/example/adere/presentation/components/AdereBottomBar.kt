@@ -1,11 +1,11 @@
 package com.example.adere.presentation.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,8 +25,6 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -37,40 +35,43 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.example.adere.presentation.navigation.NavDestination
-import com.example.ui.theme.CleanBorder
-import com.example.ui.theme.TextDarkMuted
-import com.example.ui.theme.TextDarkPrimary
-import com.example.ui.theme.TotalSecurityPrimary
 
 @Composable
 fun AdereTotalSecurityBottomBar(
     currentTab: NavDestination,
     onSelectTab: (NavDestination) -> Unit,
-    onCenterAddClick: () -> Unit
+    onCenterAddClick: () -> Unit,
 ) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.Transparent),
         contentAlignment = Alignment.BottomCenter
     ) {
-        // Floating curved white dock
+        // Floating curved dock matching theme surface & border
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(68.dp)
-                .shadow(elevation = 16.dp, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp), spotColor = Color(0x1F1A1C29)),
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-            color = Color.White,
-            border = androidx.compose.foundation.BorderStroke(1.dp, CleanBorder)
+                .height(72.dp)
+                .shadow(
+                    elevation = 20.dp,
+                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                    spotColor = primaryColor
+                ),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -95,7 +96,7 @@ fun AdereTotalSecurityBottomBar(
                 )
 
                 // Spacer for the center raised button
-                Spacer(modifier = Modifier.size(54.dp))
+                Spacer(modifier = Modifier.size(56.dp))
 
                 // Tab 4: Security / Health Audit
                 BottomBarItem(
@@ -107,13 +108,13 @@ fun AdereTotalSecurityBottomBar(
                     testTag = "nav_tab_security"
                 )
 
-                // Tab 5: Profile / Settings
+                // Tab 5: Settings / Profile
                 BottomBarItem(
                     selected = currentTab == NavDestination.SETTINGS,
                     onClick = { onSelectTab(NavDestination.SETTINGS) },
                     selectedIcon = Icons.Filled.Person,
                     unselectedIcon = Icons.Outlined.Person,
-                    contentDescription = "Profile",
+                    contentDescription = "Settings",
                     testTag = "nav_tab_settings"
                 )
             }
@@ -122,11 +123,11 @@ fun AdereTotalSecurityBottomBar(
         // Center Raised Floating '+' Action Button
         Box(
             modifier = Modifier
-                .offset(y = (-18).dp)
-                .size(54.dp)
-                .shadow(12.dp, CircleShape, spotColor = TotalSecurityPrimary)
+                .offset(y = (-20).dp)
+                .size(56.dp)
+                .shadow(14.dp, CircleShape, spotColor = primaryColor)
                 .clip(CircleShape)
-                .background(TotalSecurityPrimary)
+                .background(primaryColor)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -138,7 +139,7 @@ fun AdereTotalSecurityBottomBar(
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Add Item",
-                tint = Color.White,
+                tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(28.dp)
             )
         }
@@ -149,14 +150,19 @@ fun AdereTotalSecurityBottomBar(
 private fun BottomBarItem(
     selected: Boolean,
     onClick: () -> Unit,
-    selectedIcon: androidx.compose.ui.graphics.vector.ImageVector,
-    unselectedIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    selectedIcon: ImageVector,
+    unselectedIcon: ImageVector,
     contentDescription: String,
     testTag: String
 ) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
+
     Box(
         modifier = Modifier
-            .size(48.dp)
+            .size(54.dp, 42.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(if (selected) primaryColor.copy(alpha = 0.15f) else Color.Transparent)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -168,7 +174,7 @@ private fun BottomBarItem(
         Icon(
             imageVector = if (selected) selectedIcon else unselectedIcon,
             contentDescription = contentDescription,
-            tint = if (selected) TextDarkPrimary else TextDarkMuted,
+            tint = if (selected) primaryColor else unselectedColor,
             modifier = Modifier.size(24.dp)
         )
     }

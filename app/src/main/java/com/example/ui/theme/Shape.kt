@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.example.ui.theme
 
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,5 +11,5 @@ val Shapes = Shapes(
     small = RoundedCornerShape(10.dp),
     medium = RoundedCornerShape(16.dp),
     large = RoundedCornerShape(22.dp),
-    extraLarge = RoundedCornerShape(28.dp)
+    extraLarge = RoundedCornerShape(28.dp),
 )

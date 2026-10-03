@@ -1,9 +1,11 @@
+@file:Suppress("unused")
+
 package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
 // ==========================================
-// Total Security (Image Theme) Palette
+// Total Security Palette
 // ==========================================
 val TotalSecurityPrimary = Color(0xFF5E5CE6) // Royal Indigo / Periwinkle
 val TotalSecurityPrimaryLight = Color(0xFF7E7CF6)
@@ -11,19 +13,19 @@ val TotalSecurityPrimaryDark = Color(0xFF4341B8)
 val TotalSecurityPrimaryContainer = Color(0xFFEEF0FF) // Lavender password card container
 val TotalSecurityOnPrimaryContainer = Color(0xFF27237E)
 
-// Category Colors from Image
+// Category Colors
 val CategorySocialBlue = Color(0xFF5E5CE6) // Social tile
 val CategoryAppsYellow = Color(0xFFF5BA31) // Apps tile
 val CategoryCardTeal = Color(0xFF48C9B0)   // Card tile
 val CategoryCoral = Color(0xFFFF6B6B)
 
-// Action & Utility Colors from Image
+// Action & Utility Colors
 val ActionCopyGreen = Color(0xFF6EE7B7)    // "Copy to clipboard" button
 val ActionCopyGreenText = Color(0xFF065F46)
 val ActionRefreshYellow = Color(0xFFFEF08A) // Circular refresh button
 val ActionRefreshYellowIcon = Color(0xFF78350F)
 
-// Health Ring Colors from Image
+// Health Ring Colors
 val HealthSafeBlue = Color(0xFF5E5CE6)
 val HealthRefusedYellow = Color(0xFFF5BA31)
 val HealthRiskRed = Color(0xFFEF4444)
@@ -98,7 +100,7 @@ enum class VaultThemePalette(
     val subtitle: String,
     val primaryColor: Color,
     val surfaceColor: Color,
-    val bgColor: Color
+    val bgColor: Color,
 ) {
     TOTAL_SECURITY(
         title = "Total Security",

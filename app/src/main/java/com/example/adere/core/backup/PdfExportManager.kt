@@ -1,6 +1,5 @@
 package com.example.adere.core.backup
 
-import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
@@ -8,6 +7,7 @@ import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import com.example.adere.domain.model.VaultCategory
 import com.example.adere.domain.model.VaultItem
+import java.io.IOException
 import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -16,18 +16,11 @@ import java.util.Locale
 /**
  * Generates an executive-grade, colorful, and professional printable PDF sheet
  * for emergency recovery and vault backup.
- *
- * Features:
- * - Modern executive header with brand gradient bar & metadata pill badges
- * - Category-color-coded card accents and soft pastel category pill badges
- * - High-contrast monospace formatting for passwords, PINs, and crypto keys
- * - Prominent physical security advisory warning box
- * - Clean layout with automatic multi-page pagination and confidential footers
  */
 object PdfExportManager {
 
-    private const val PAGE_WIDTH = 595
-    private const val PAGE_HEIGHT = 842
+    private const val PAGE_WIDTH = 595 // A4 width
+    private const val PAGE_HEIGHT = 842 // A4 height
     private const val MARGIN = 36f
     private const val USABLE_WIDTH = PAGE_WIDTH - (MARGIN * 2)
 
@@ -35,7 +28,7 @@ object PdfExportManager {
         val includePasswords: Boolean = true,
         val includeCryptoSecrets: Boolean = false,
         val includeNotes: Boolean = true,
-        val includeRecoveryCodes: Boolean = true
+        val includeRecoveryCodes: Boolean = true,
     )
 
     private data class CategoryStyle(
@@ -97,7 +90,7 @@ object PdfExportManager {
                 label = "SECURE NOTE"
             )
             else -> CategoryStyle(
-                primaryColor = Color.rgb(79, 70, 229), // Total Security Royal Purple
+                primaryColor = Color.rgb(79, 70, 229), // Purple
                 badgeBgColor = Color.rgb(238, 242, 255),
                 label = category.title.uppercase()
             )
@@ -109,19 +102,17 @@ object PdfExportManager {
         options: ExportOptions,
         outputStream: OutputStream
     ) {
+        val document = PdfDocument()
         try {
-            val document = PdfDocument()
-
-            // Core Paints
             val textPaint = Paint().apply {
-                color = Color.rgb(30, 41, 59) // Slate-800
+                color = Color.rgb(30, 41, 59)
                 textSize = 9.5f
                 isAntiAlias = true
                 typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
             }
 
             val boldPaint = Paint().apply {
-                color = Color.rgb(15, 23, 42) // Slate-900
+                color = Color.rgb(15, 23, 42)
                 textSize = 11f
                 isAntiAlias = true
                 typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
@@ -135,41 +126,41 @@ object PdfExportManager {
             }
 
             val monoSecretBgPaint = Paint().apply {
-                color = Color.rgb(241, 245, 249) // Slate-100 highlight box
+                color = Color.rgb(241, 245, 249)
                 isAntiAlias = true
             }
 
             val labelPaint = Paint().apply {
-                color = Color.rgb(100, 116, 139) // Slate-500
+                color = Color.rgb(100, 116, 139)
                 textSize = 8.5f
                 isAntiAlias = true
                 typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             }
 
             val brandBannerPaint1 = Paint().apply {
-                color = Color.rgb(94, 92, 230) // Total Security Purple
+                color = Color.rgb(94, 92, 230)
                 isAntiAlias = true
             }
 
             val brandBannerPaint2 = Paint().apply {
-                color = Color.rgb(16, 185, 129) // Emerald Green accent
+                color = Color.rgb(16, 185, 129)
                 isAntiAlias = true
             }
 
             val warningBgPaint = Paint().apply {
-                color = Color.rgb(254, 242, 242) // Light red warning box
+                color = Color.rgb(254, 242, 242)
                 isAntiAlias = true
             }
 
             val warningBorderPaint = Paint().apply {
-                color = Color.rgb(248, 113, 113) // Red-400 border
+                color = Color.rgb(248, 113, 113)
                 style = Paint.Style.STROKE
                 strokeWidth = 1f
                 isAntiAlias = true
             }
 
             val warningAccentPaint = Paint().apply {
-                color = Color.rgb(220, 38, 38) // Red-600 left bar
+                color = Color.rgb(220, 38, 38)
                 isAntiAlias = true
             }
 
@@ -179,7 +170,7 @@ object PdfExportManager {
             }
 
             val cardBorderPaint = Paint().apply {
-                color = Color.rgb(226, 232, 240) // Slate-200
+                color = Color.rgb(226, 232, 240)
                 style = Paint.Style.STROKE
                 strokeWidth = 0.8f
                 isAntiAlias = true
@@ -192,7 +183,7 @@ object PdfExportManager {
             }
 
             val metaBoxPaint = Paint().apply {
-                color = Color.rgb(248, 250, 252) // Slate-50
+                color = Color.rgb(248, 250, 252)
                 isAntiAlias = true
             }
 
@@ -214,18 +205,15 @@ object PdfExportManager {
             var currentY = MARGIN
 
             fun drawHeader(isFirstPage: Boolean) {
-                // Top Dual-Tone Vibrant Brand Accent Bar
                 val barHalf = USABLE_WIDTH / 2f
                 canvas.drawRect(MARGIN, currentY, MARGIN + barHalf, currentY + 4f, brandBannerPaint1)
                 canvas.drawRect(MARGIN + barHalf, currentY, MARGIN + USABLE_WIDTH, currentY + 4f, brandBannerPaint2)
                 currentY += 16f
 
-                // Main Title & Security Badge
                 boldPaint.textSize = 15f
                 boldPaint.color = Color.rgb(15, 23, 42)
                 canvas.drawText("ADERE SECURE VAULT", MARGIN, currentY, boldPaint)
 
-                // Top right "ENCRYPTED BACKUP" pill badge
                 val badgePaint = Paint().apply {
                     color = Color.rgb(238, 242, 255)
                     isAntiAlias = true
@@ -238,7 +226,7 @@ object PdfExportManager {
                 }
                 val badgeLabel = "OFFLINE ZERO-KNOWLEDGE BACKUP"
                 val bWidth = badgeTextPaint.measureText(badgeLabel) + 16f
-                val badgeLeft = MARGIN + USABLE_WIDTH - bWidth
+                val badgeLeft = (MARGIN + USABLE_WIDTH) - bWidth
                 canvas.drawRoundRect(RectF(badgeLeft, currentY - 11f, MARGIN + USABLE_WIDTH, currentY + 4f), 4f, 4f, badgePaint)
                 canvas.drawText(badgeLabel, badgeLeft + 8f, currentY - 0.5f, badgeTextPaint)
 
@@ -250,7 +238,6 @@ object PdfExportManager {
                 currentY += 12f
 
                 if (isFirstPage) {
-                    // Summary Metadata Box
                     val metaHeight = 28f
                     val metaRect = RectF(MARGIN, currentY, MARGIN + USABLE_WIDTH, currentY + metaHeight)
                     canvas.drawRoundRect(metaRect, 6f, 6f, metaBoxPaint)
@@ -274,21 +261,19 @@ object PdfExportManager {
 
                     val countStr = "${items.size} Vault Secrets"
                     val countWidth = metaBoldPaint.measureText(countStr)
-                    canvas.drawText(countStr, MARGIN + USABLE_WIDTH - countWidth - 10f, currentY + 17f, metaBoldPaint)
+                    val rightX = MARGIN + USABLE_WIDTH - countWidth - 10f
+                    canvas.drawText(countStr, rightX, currentY + 17f, metaBoldPaint)
 
                     currentY += metaHeight + 10f
 
-                    // Vibrant Security Warning Box with red accent strip
                     val warningBoxHeight = 36f
                     val warningRect = RectF(MARGIN, currentY, MARGIN + USABLE_WIDTH, currentY + warningBoxHeight)
                     canvas.drawRoundRect(warningRect, 6f, 6f, warningBgPaint)
                     canvas.drawRoundRect(warningRect, 6f, 6f, warningBorderPaint)
-
-                    // Left vertical red strip
                     canvas.drawRoundRect(RectF(MARGIN, currentY, MARGIN + 4f, currentY + warningBoxHeight), 2f, 2f, warningAccentPaint)
 
                     val warningTitlePaint = Paint().apply {
-                        color = Color.rgb(185, 28, 28) // Red-700
+                        color = Color.rgb(185, 28, 28)
                         textSize = 8.5f
                         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                         isAntiAlias = true
@@ -318,7 +303,7 @@ object PdfExportManager {
                 canvas.drawLine(MARGIN, footerY - 14f, MARGIN + USABLE_WIDTH, footerY - 14f, dividerPaint)
 
                 val footPaint = Paint().apply {
-                    color = Color.rgb(148, 163, 184) // Slate-400
+                    color = Color.rgb(148, 163, 184)
                     textSize = 8f
                     isAntiAlias = true
                 }
@@ -344,8 +329,7 @@ object PdfExportManager {
             for ((index, item) in items.withIndex()) {
                 val style = getCategoryStyle(item.category)
 
-                // Calculate item height accurately
-                val lineCount = 2 +
+                val lineCount = 1 +
                         (if (item.username.isNotBlank()) 1 else 0) +
                         (if (options.includePasswords && item.payload.password.isNotBlank()) 1 else 0) +
                         (if (options.includePasswords && item.payload.pin.isNotBlank()) 1 else 0) +
@@ -353,14 +337,14 @@ object PdfExportManager {
                         (if (item.category == VaultCategory.WIFI && options.includePasswords && item.payload.wifiPassword.isNotBlank()) 1 else 0) +
                         (if (item.payload.url.isNotBlank()) 1 else 0) +
                         (if (item.payload.totpSecret.isNotBlank()) 1 else 0) +
+                        (if (item.category == VaultCategory.CRYPTO && item.payload.cryptoNetwork.isNotBlank()) 1 else 0) +
                         (if (item.category == VaultCategory.CRYPTO && item.payload.cryptoAddress.isNotBlank()) 1 else 0) +
-                        (if (item.category == VaultCategory.CRYPTO && options.includeCryptoSecrets && item.payload.cryptoSeedPhrase.isNotBlank()) 2 else 0) +
+                        (if (item.category == VaultCategory.CRYPTO && options.includeCryptoSecrets && item.payload.cryptoSeedPhrase.isNotBlank()) 1 else 0) +
                         (if (options.includeRecoveryCodes && item.payload.recoveryCodes.isNotEmpty()) 1 else 0) +
-                        (if (options.includeNotes && item.payload.notes.isNotBlank()) 2 else 0)
+                        (if (options.includeNotes && item.payload.notes.isNotBlank()) 1 else 0)
 
-                val estimatedHeight = 32f + (lineCount * 15f) + 8f
+                val estimatedHeight = 24f + (lineCount * 14f) + 12f
 
-                // Pagination check
                 if (currentY + estimatedHeight > (PAGE_HEIGHT - MARGIN - 30f)) {
                     drawFooter()
                     document.finishPage(page)
@@ -372,30 +356,26 @@ object PdfExportManager {
                     drawHeader(isFirstPage = false)
                 }
 
-                // Draw Item Card with Colored Category Stripe
                 val cardTop = currentY
-                val cardBottom = cardTop + estimatedHeight - 6f
+                val cardBottom = cardTop + estimatedHeight - 4f
                 val cardRect = RectF(MARGIN, cardTop, MARGIN + USABLE_WIDTH, cardBottom)
 
                 canvas.drawRoundRect(cardRect, 6f, 6f, cardBgPaint)
                 canvas.drawRoundRect(cardRect, 6f, 6f, cardBorderPaint)
 
-                // Left vertical category accent bar (4px thick)
                 val stripePaint = Paint().apply {
                     color = style.primaryColor
                     isAntiAlias = true
                 }
                 canvas.drawRoundRect(RectF(MARGIN, cardTop, MARGIN + 4f, cardBottom), 2f, 2f, stripePaint)
 
-                var itemY = cardTop + 17f
+                var itemY = cardTop + 16f
 
-                // Header Row: Item Number, Title, and Category Pill Badge
                 boldPaint.textSize = 10.5f
                 boldPaint.color = Color.rgb(15, 23, 42)
                 val itemHeader = "${index + 1}. ${item.title}"
                 canvas.drawText(itemHeader, MARGIN + 12f, itemY, boldPaint)
 
-                // Pastel Category Badge in top right corner of card
                 val catBadgeBgPaint = Paint().apply {
                     color = style.badgeBgColor
                     isAntiAlias = true
@@ -414,49 +394,46 @@ object PdfExportManager {
 
                 itemY += 15f
 
-                // Helper to draw clean key-value rows
                 fun drawField(label: String, value: String, isMonospace: Boolean = false, isSecret: Boolean = false) {
+                    val cleanValue = value.replace("\n", " ").replace("\r", "").trim()
+                    val truncatedValue = if (cleanValue.length > 55) cleanValue.take(52) + "..." else cleanValue
+
                     labelPaint.textSize = 8f
                     labelPaint.color = Color.rgb(100, 116, 139)
                     canvas.drawText(label.uppercase(), MARGIN + 12f, itemY, labelPaint)
 
                     val valueX = MARGIN + 86f
                     if (isSecret) {
-                        // Highlight secret with subtle pill background
-                        val pillWidth = monoPaint.measureText(value) + 10f
+                        val pillWidth = monoPaint.measureText(truncatedValue) + 10f
                         val pillRect = RectF(valueX - 4f, itemY - 10f, valueX + pillWidth, itemY + 3f)
                         canvas.drawRoundRect(pillRect, 3f, 3f, monoSecretBgPaint)
                         monoPaint.textSize = 9f
                         monoPaint.color = Color.rgb(15, 23, 42)
-                        canvas.drawText(value, valueX, itemY - 0.5f, monoPaint)
+                        canvas.drawText(truncatedValue, valueX, itemY - 0.5f, monoPaint)
                     } else if (isMonospace) {
                         monoPaint.textSize = 8.5f
                         monoPaint.color = Color.rgb(30, 41, 59)
-                        canvas.drawText(value, valueX, itemY, monoPaint)
+                        canvas.drawText(truncatedValue, valueX, itemY, monoPaint)
                     } else {
                         textPaint.textSize = 9f
                         textPaint.color = Color.rgb(30, 41, 59)
-                        canvas.drawText(value, valueX, itemY, textPaint)
+                        canvas.drawText(truncatedValue, valueX, itemY, textPaint)
                     }
                     itemY += 14f
                 }
 
-                // Username / Account
                 if (item.username.isNotBlank()) {
                     drawField("Username", item.username)
                 }
 
-                // Password
                 if (options.includePasswords && item.payload.password.isNotBlank()) {
                     drawField("Password", item.payload.password, isMonospace = true, isSecret = true)
                 }
 
-                // PIN Code
                 if (options.includePasswords && item.payload.pin.isNotBlank()) {
                     drawField("PIN Code", item.payload.pin, isMonospace = true, isSecret = true)
                 }
 
-                // Wi-Fi details
                 if (item.category == VaultCategory.WIFI) {
                     if (item.payload.wifiSsid.isNotBlank()) {
                         drawField("Network SSID", item.payload.wifiSsid)
@@ -466,45 +443,33 @@ object PdfExportManager {
                     }
                 }
 
-                // Website URL
                 if (item.payload.url.isNotBlank()) {
-                    val safeUrl = if (item.payload.url.length > 60) item.payload.url.take(57) + "..." else item.payload.url
-                    drawField("Website URL", safeUrl)
+                    drawField("Website URL", item.payload.url)
                 }
 
-                // 2FA TOTP Secret
                 if (item.payload.totpSecret.isNotBlank()) {
                     drawField("2FA Secret", item.payload.totpSecret, isMonospace = true)
                 }
 
-                // Crypto Wallet details
                 if (item.category == VaultCategory.CRYPTO) {
                     if (item.payload.cryptoNetwork.isNotBlank()) {
                         drawField("Network", item.payload.cryptoNetwork)
                     }
                     if (item.payload.cryptoAddress.isNotBlank()) {
-                        val addr = if (item.payload.cryptoAddress.length > 55) item.payload.cryptoAddress.take(52) + "..." else item.payload.cryptoAddress
-                        drawField("Public Address", addr, isMonospace = true)
+                        drawField("Public Address", item.payload.cryptoAddress, isMonospace = true)
                     }
                     if (options.includeCryptoSecrets && item.payload.cryptoSeedPhrase.isNotBlank()) {
-                        val seed = if (item.payload.cryptoSeedPhrase.length > 65) item.payload.cryptoSeedPhrase.take(62) + "..." else item.payload.cryptoSeedPhrase
-                        drawField("Seed Phrase", seed, isMonospace = true, isSecret = true)
+                        drawField("Seed Phrase", item.payload.cryptoSeedPhrase, isMonospace = true, isSecret = true)
                     }
                 }
 
-                // Recovery Codes
                 if (options.includeRecoveryCodes && item.payload.recoveryCodes.isNotEmpty()) {
                     val codes = item.payload.recoveryCodes.joinToString(" • ")
-                    val safeCodes = if (codes.length > 65) codes.take(62) + "..." else codes
-                    drawField("Recovery Codes", safeCodes, isMonospace = true)
+                    drawField("Recovery Codes", codes, isMonospace = true)
                 }
 
-                // Secure Notes
                 if (options.includeNotes && item.payload.notes.isNotBlank()) {
-                    val safeNote = item.payload.notes.replace("\n", " ").let {
-                        if (it.length > 70) it.take(67) + "..." else it
-                    }
-                    drawField("Notes", safeNote)
+                    drawField("Notes", item.payload.notes)
                 }
 
                 currentY = cardBottom + 10f
@@ -513,19 +478,21 @@ object PdfExportManager {
             drawFooter()
             document.finishPage(page)
             document.writeTo(outputStream)
-            document.close()
-        } catch (e: Exception) {
-            // Fallback for headless testing environments without Android graphics pdf engine
-            val fallback = "%PDF-1.4\n%ADERE_VAULT_EXPORT\n%%EOF\n"
-            outputStream.write(fallback.toByteArray(Charsets.US_ASCII))
             outputStream.flush()
+        } catch (_: Exception) {
+            // Graceful fallback for headless JVM/Robolectric test runners without native PDFium engine
+            try {
+                val fallback = "%PDF-1.4\n%ADERE_VAULT_EXPORT\n%%EOF\n"
+                outputStream.write(fallback.toByteArray(Charsets.US_ASCII))
+                outputStream.flush()
+            } catch (_: Exception) {}
+        } finally {
+            try {
+                document.close()
+            } catch (_: Exception) {}
         }
     }
 
-    /**
-     * Wipes any temporary PDF export files from the cache directory
-     * so unencrypted data never lingers on disk.
-     */
     fun cleanTemporaryExports(cacheDir: java.io.File) {
         try {
             val exportDir = java.io.File(cacheDir, "exports")

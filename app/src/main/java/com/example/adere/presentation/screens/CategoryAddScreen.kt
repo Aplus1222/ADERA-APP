@@ -56,10 +56,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
@@ -336,8 +338,8 @@ fun CategoryAddScreen(
 
                             FlowRow(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 for (brand in BrandIconHelper.POPULAR_CRYPTO_BRANDS) {
                                     BrandQuickChip(
@@ -358,7 +360,8 @@ fun CategoryAddScreen(
                             color = Color(0xFF2563EB),
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
-                        )
+                        ),
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
 
@@ -367,9 +370,10 @@ fun CategoryAddScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = CleanSurface),
-                        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CleanBorder))
+                        border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(CleanBorder)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-                        Column(modifier = Modifier.padding(14.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                             Text(
                                 text = "Google & Mailbox Services",
                                 style = MaterialTheme.typography.titleSmall.copy(
@@ -377,12 +381,12 @@ fun CategoryAddScreen(
                                     color = TextDarkPrimary
                                 )
                             )
-                            Spacer(modifier = Modifier.height(10.dp))
+                            Spacer(modifier = Modifier.height(14.dp))
 
                             FlowRow(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 for (brand in BrandIconHelper.POPULAR_EMAIL_BRANDS) {
                                     BrandQuickChip(
@@ -403,7 +407,8 @@ fun CategoryAddScreen(
                             color = TotalSecurityPrimary,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
-                        )
+                        ),
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
 
@@ -412,9 +417,10 @@ fun CategoryAddScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = CleanSurface),
-                        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CleanBorder))
+                        border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(CleanBorder)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-                        Column(modifier = Modifier.padding(14.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                             Text(
                                 text = "One-Tap Add Social Accounts",
                                 style = MaterialTheme.typography.titleSmall.copy(
@@ -426,12 +432,12 @@ fun CategoryAddScreen(
                                 text = "Facebook, Instagram, X, TikTok, Telegram, WhatsApp & more",
                                 style = MaterialTheme.typography.bodySmall.copy(color = TextDarkSecondary)
                             )
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(14.dp))
 
                             FlowRow(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 for (brand in BrandIconHelper.POPULAR_SOCIAL_BRANDS) {
                                     BrandQuickChip(
@@ -479,28 +485,36 @@ private fun BrandQuickChip(
 ) {
     Card(
         modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
+            .width(108.dp)
+            .height(84.dp)
+            .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .testTag("quick_brand_${brand.id}"),
-        colors = CardDefaults.cardColors(containerColor = CleanSurfaceVariant),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CleanBorder))
+        colors = CardDefaults.cardColors(containerColor = CleanSurface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(CleanBorder))
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Image(
                 painter = painterResource(id = brand.iconRes),
                 contentDescription = brand.name,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(32.dp)
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = brand.name,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
                     color = TextDarkPrimary
-                )
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -516,20 +530,21 @@ private fun CategoryCardRow(
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .testTag("category_card_${option.category.name.lowercase()}"),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = CleanSurface),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CleanBorder))
+        border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(CleanBorder)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(46.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .size(52.dp)
+                    .clip(RoundedCornerShape(14.dp))
                     .background(option.iconBgColor),
                 contentAlignment = Alignment.Center
             ) {
@@ -537,18 +552,19 @@ private fun CategoryCardRow(
                     imageVector = option.icon,
                     contentDescription = option.title,
                     tint = option.iconColor,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(26.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = option.title,
                     style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = TextDarkPrimary
+                        fontWeight = FontWeight.ExtraBold,
+                        color = TextDarkPrimary,
+                        fontSize = 17.sp
                     )
                 )
                 Text(

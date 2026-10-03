@@ -42,6 +42,14 @@ class VaultConfigStore(context: Context) {
         private const val KEY_STORED_RECOVERY_KEY_ENC = "stored_recovery_key_enc"
         private const val KEY_STORED_RECOVERY_KEY_IV = "stored_recovery_key_iv"
         private const val KEY_HAS_RECOVERY_KEY = "has_recovery_key"
+        private const val KEY_NOTIFICATIONS_ENABLED = "notifications_enabled"
+        private const val KEY_HIDE_RECENT_APPS = "hide_recent_apps"
+        private const val KEY_GEN_LENGTH = "gen_length"
+        private const val KEY_GEN_UPPER = "gen_upper"
+        private const val KEY_GEN_LOWER = "gen_lower"
+        private const val KEY_GEN_DIGITS = "gen_digits"
+        private const val KEY_GEN_SYMBOLS = "gen_symbols"
+        private const val KEY_GEN_EXCLUDE_AMBIGUOUS = "gen_exclude_ambiguous"
     }
 
     var isInitialized: Boolean
@@ -119,6 +127,38 @@ class VaultConfigStore(context: Context) {
     var storedRecoveryKeyIvBase64: String
         get() = prefs.getString(KEY_STORED_RECOVERY_KEY_IV, "") ?: ""
         set(value) = prefs.edit().putString(KEY_STORED_RECOVERY_KEY_IV, value).apply()
+
+    var isNotificationsEnabled: Boolean
+        get() = prefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, true)
+        set(value) = prefs.edit().putBoolean(KEY_NOTIFICATIONS_ENABLED, value).apply()
+
+    var isHideRecentAppsContentEnabled: Boolean
+        get() = prefs.getBoolean(KEY_HIDE_RECENT_APPS, false)
+        set(value) = prefs.edit().putBoolean(KEY_HIDE_RECENT_APPS, value).apply()
+
+    var generatorLength: Int
+        get() = prefs.getInt(KEY_GEN_LENGTH, 20)
+        set(value) = prefs.edit().putInt(KEY_GEN_LENGTH, value).apply()
+
+    var generatorIncludeUppercase: Boolean
+        get() = prefs.getBoolean(KEY_GEN_UPPER, true)
+        set(value) = prefs.edit().putBoolean(KEY_GEN_UPPER, value).apply()
+
+    var generatorIncludeLowercase: Boolean
+        get() = prefs.getBoolean(KEY_GEN_LOWER, true)
+        set(value) = prefs.edit().putBoolean(KEY_GEN_LOWER, value).apply()
+
+    var generatorIncludeDigits: Boolean
+        get() = prefs.getBoolean(KEY_GEN_DIGITS, true)
+        set(value) = prefs.edit().putBoolean(KEY_GEN_DIGITS, value).apply()
+
+    var generatorIncludeSymbols: Boolean
+        get() = prefs.getBoolean(KEY_GEN_SYMBOLS, true)
+        set(value) = prefs.edit().putBoolean(KEY_GEN_SYMBOLS, value).apply()
+
+    var generatorExcludeAmbiguous: Boolean
+        get() = prefs.getBoolean(KEY_GEN_EXCLUDE_AMBIGUOUS, true)
+        set(value) = prefs.edit().putBoolean(KEY_GEN_EXCLUDE_AMBIGUOUS, value).apply()
 
     var hasRecoveryKey: Boolean
         get() = prefs.getBoolean(KEY_HAS_RECOVERY_KEY, false)

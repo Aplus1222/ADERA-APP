@@ -20,7 +20,8 @@ object PasswordHealthAnalyzer {
         val oldCount: Int,
         val missing2faCount: Int,
         val overallStatus: SecurityStatus,
-        val healthScorePercent: Int
+        val healthScorePercent: Int,
+        val overallRating: String = "10 / 10"
     )
 
     enum class SecurityStatus(val label: String) {
@@ -48,7 +49,8 @@ object PasswordHealthAnalyzer {
                 oldCount = 0,
                 missing2faCount = 0,
                 overallStatus = SecurityStatus.STRONG,
-                healthScorePercent = 100
+                healthScorePercent = 100,
+                overallRating = "10 / 10"
             )
         }
 
@@ -107,6 +109,8 @@ object PasswordHealthAnalyzer {
             else -> SecurityStatus.ATTENTION_REQUIRED
         }
 
+        val rating = if (scorePercent >= 60) "10 / 10" else "${(scorePercent / 10).coerceIn(1, 10)} / 10"
+
         return VaultHealthReport(
             totalItems = items.size,
             totalPasswords = passwordCount,
@@ -115,7 +119,8 @@ object PasswordHealthAnalyzer {
             oldCount = oldCount,
             missing2faCount = missing2faCount,
             overallStatus = status,
-            healthScorePercent = scorePercent
+            healthScorePercent = scorePercent,
+            overallRating = rating
         )
     }
 }

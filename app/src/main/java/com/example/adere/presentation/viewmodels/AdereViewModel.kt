@@ -79,10 +79,19 @@ class AdereViewModel(
     val totpMap: StateFlow<Map<String, TOTPGenerator.TotpResult>> = _totpMap.asStateFlow()
 
     // Generator state
-    private val _generatorOptions = MutableStateFlow(PasswordGenerator.GeneratorOptions())
+    private val initialGenOptions = PasswordGenerator.GeneratorOptions(
+        length = configStore.generatorLength,
+        includeUppercase = configStore.generatorIncludeUppercase,
+        includeLowercase = configStore.generatorIncludeLowercase,
+        includeDigits = configStore.generatorIncludeDigits,
+        includeSymbols = configStore.generatorIncludeSymbols,
+        excludeAmbiguous = configStore.generatorExcludeAmbiguous
+    )
+
+    private val _generatorOptions = MutableStateFlow(initialGenOptions)
     val generatorOptions: StateFlow<PasswordGenerator.GeneratorOptions> = _generatorOptions.asStateFlow()
 
-    private val _generatedResult = MutableStateFlow(PasswordGenerator.generate(PasswordGenerator.GeneratorOptions()))
+    private val _generatedResult = MutableStateFlow(PasswordGenerator.generate(initialGenOptions))
     val generatedResult: StateFlow<PasswordGenerator.GenerationResult> = _generatedResult.asStateFlow()
 
     // Settings observable state
@@ -97,6 +106,12 @@ class AdereViewModel(
 
     private val _biometricEnabled = MutableStateFlow(configStore.isBiometricEnabled)
     val biometricEnabled: StateFlow<Boolean> = _biometricEnabled.asStateFlow()
+
+    private val _notificationsEnabled = MutableStateFlow(configStore.isNotificationsEnabled)
+    val notificationsEnabled: StateFlow<Boolean> = _notificationsEnabled.asStateFlow()
+
+    private val _hideRecentAppsContent = MutableStateFlow(configStore.isHideRecentAppsContentEnabled)
+    val hideRecentAppsContent: StateFlow<Boolean> = _hideRecentAppsContent.asStateFlow()
 
     private val _themePalette = MutableStateFlow(
         try {
@@ -227,6 +242,12 @@ class AdereViewModel(
 
     // Generator methods
     fun updateGeneratorOptions(newOptions: PasswordGenerator.GeneratorOptions) {
+        configStore.generatorLength = newOptions.length
+        configStore.generatorIncludeUppercase = newOptions.includeUppercase
+        configStore.generatorIncludeLowercase = newOptions.includeLowercase
+        configStore.generatorIncludeDigits = newOptions.includeDigits
+        configStore.generatorIncludeSymbols = newOptions.includeSymbols
+        configStore.generatorExcludeAmbiguous = newOptions.excludeAmbiguous
         _generatorOptions.value = newOptions
         regeneratePassword()
     }
@@ -292,6 +313,16 @@ class AdereViewModel(
     fun setClipboardClearSeconds(seconds: Int) {
         configStore.clipboardClearSeconds = seconds
         _clipboardClearSeconds.value = seconds
+    }
+
+    fun setNotificationsEnabled(enabled: Boolean) {
+        configStore.isNotificationsEnabled = enabled
+        _notificationsEnabled.value = enabled
+    }
+
+    fun setHideRecentAppsContent(enabled: Boolean) {
+        configStore.isHideRecentAppsContentEnabled = enabled
+        _hideRecentAppsContent.value = enabled
     }
 
     fun setThemePalette(palette: com.example.ui.theme.VaultThemePalette) {

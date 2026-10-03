@@ -10,7 +10,6 @@ import com.example.adere.domain.model.VaultItem
 import com.example.adere.domain.model.VaultItemPayload
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -87,7 +86,7 @@ class ExampleUnitTest {
             includeLowercase = true,
             includeDigits = true,
             includeSymbols = true,
-            excludeAmbiguous = true
+            excludeAmbiguous = true,
         )
 
         val result = PasswordGenerator.generate(options)
@@ -375,5 +374,46 @@ class ExampleUnitTest {
         val newUnlock = sessionManager.unlockWithMasterPassword("NewPass456!".toCharArray())
         assertTrue(newUnlock.isSuccess)
         assertEquals(com.example.adere.domain.repository.VaultLockState.Unlocked, sessionManager.lockState.value)
+    }
+
+    @Test
+    fun testCorruptedBackupHandling() {
+        val badBackupString = "ADERE_VAULT_BACKUP:v1:INVALID_BASE64_DATA"
+        val result = BackupManager.decryptAndValidateBackup(badBackupString, "AnyPass123!".toCharArray())
+        assertTrue(result.isFailure)
+    }
+
+    @Test
+    fun testPasswordStrengthEvaluation() {
+        val weak = PasswordGenerator.evaluateStrength(20.0, 4)
+        assertEquals(PasswordGenerator.PasswordStrength.VERY_WEAK, weak)
+
+        val veryStrong = PasswordGenerator.evaluateStrength(120.0, 32)
+        assertEquals(PasswordGenerator.PasswordStrength.VERY_STRONG, veryStrong)
+    }
+
+    @Test
+    fun testExtremelyLongPasswordRoundTrip() {
+        val dek = CryptoEngine.generateDek()
+        val longText = "A".repeat(5000) + "!@#$%"
+        val encrypted = CryptoEngine.encryptString(longText, dek)
+        val decrypted = CryptoEngine.decryptString(encrypted.ciphertext, encrypted.iv, dek)
+        assertEquals(longText, decrypted)
+    }
+
+    @Test
+    fun testPasswordHealthOverallRating() {
+        val items = listOf(
+            PasswordHealthAnalyzer.PasswordItemInfo(
+                id = "1",
+                title = "Secure Service",
+                username = "admin",
+                passwordPlaintext = "SecureP@ssw0rd!2026#",
+                has2FA = true,
+                passwordLastChangedEpochMs = System.currentTimeMillis()
+            )
+        )
+        val report = PasswordHealthAnalyzer.analyze(items)
+        assertEquals("10 / 10", report.overallRating)
     }
 }

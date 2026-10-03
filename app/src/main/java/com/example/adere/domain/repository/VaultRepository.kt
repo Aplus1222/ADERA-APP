@@ -128,8 +128,16 @@ class VaultRepository(
     ): Result<Int> = withContext(Dispatchers.IO) {
         val dek = sessionManager.getActiveDek()
             ?: return@withContext Result.failure(IllegalStateException("Vault is locked."))
-        val exporter = com.example.adere.core.backup.RoomVaultPdfExporter(dao)
-        exporter.exportVaultToPdf(dek, options, outputStream)
+        val items = getAllDecryptedItems()
+        try {
+            com.example.adere.core.backup.PdfExportManager.exportToPdf(items, options, outputStream)
+            try {
+                outputStream.flush()
+            } catch (_: Exception) {}
+            Result.success(items.size)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun restoreFromEncryptedBackup(

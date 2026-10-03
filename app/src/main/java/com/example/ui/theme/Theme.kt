@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.example.ui.theme
 
 import androidx.compose.material3.ColorScheme
@@ -20,7 +22,7 @@ data class ThemeAccents(
     val border: Color,
     val borderGlow: Color,
     val ambientGradient: Brush,
-    val cardBorderGradient: Brush
+    val cardBorderGradient: Brush,
 )
 
 val LocalThemeAccents = staticCompositionLocalOf {
@@ -153,7 +155,7 @@ private fun getThemeAccents(palette: VaultThemePalette): ThemeAccents {
 @Composable
 fun AdereTheme(
     palette: VaultThemePalette = VaultThemePalette.TOTAL_SECURITY,
-    darkTheme: Boolean = palette != VaultThemePalette.TOTAL_SECURITY,
+    @Suppress("UNUSED_PARAMETER") darkTheme: Boolean = palette != VaultThemePalette.TOTAL_SECURITY,
     content: @Composable () -> Unit
 ) {
     val colorScheme = getAppColorScheme(palette)

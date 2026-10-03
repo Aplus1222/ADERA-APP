@@ -1,5 +1,6 @@
 package com.example.adere.presentation.screens
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,7 +26,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.Visibility
@@ -40,10 +44,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -59,23 +64,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.adere.core.backup.PdfExportManager
 import com.example.adere.core.crypto.TOTPGenerator
 import com.example.adere.domain.model.VaultCategory
 import com.example.adere.domain.model.VaultItem
-import com.example.adere.presentation.components.SecurityWarningCard
+import com.example.adere.presentation.components.VaultItemAvatar
 import com.example.ui.theme.CharcoalBg
-import com.example.ui.theme.CharcoalBorder
 import com.example.ui.theme.CharcoalSurface
 import com.example.ui.theme.CharcoalSurfaceVariant
+import com.example.ui.theme.CleanBorder
 import com.example.ui.theme.EmeraldContainer
 import com.example.ui.theme.EmeraldLight
 import com.example.ui.theme.EmeraldPrimary
 import com.example.ui.theme.GoldAccent
+import com.example.ui.theme.SecurityOrange
 import com.example.ui.theme.SecurityRed
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
@@ -95,12 +104,14 @@ fun ItemDetailScreen(
     onDeleteClick: (String) -> Unit,
     onToggleFavorite: (String, Boolean) -> Unit,
     onCopySecret: (String, String) -> Unit, // label, secret
-    onLockClick: () -> Unit
+    @Suppress("UNUSED_PARAMETER") onLockClick: () -> Unit = {},
+    onExportPdf: ((options: PdfExportManager.ExportOptions, isShare: Boolean) -> Unit)? = null,
 ) {
-    var isPasswordRevealed by remember { mutableStateOf(false) }
-    var isSeedRevealed by remember { mutableStateOf(false) }
-    var isPrivateKeyRevealed by remember { mutableStateOf(false) }
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var isPasswordRevealed by remember { mutableStateOf(value = false) }
+    var isSeedRevealed by remember { mutableStateOf(value = false) }
+    var isPrivateKeyRevealed by remember { mutableStateOf(value = false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(value = false) }
+    var showExportPdfDialog by remember { mutableStateOf(value = false) }
 
     // Auto-hide secrets after 30 seconds for shoulder-surfing protection
     LaunchedEffect(isPasswordRevealed) {
@@ -138,6 +149,18 @@ fun ItemDetailScreen(
                     }
                 },
                 actions = {
+                    if (onExportPdf != null) {
+                        IconButton(
+                            onClick = { showExportPdfDialog = true },
+                            modifier = Modifier.testTag("detail_export_pdf_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PictureAsPdf,
+                                contentDescription = "Export Emergency PDF Sheet",
+                                tint = SecurityOrange
+                            )
+                        }
+                    }
                     IconButton(onClick = { onToggleFavorite(item.id, item.isFavorite) }) {
                         Icon(
                             imageVector = if (item.isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
@@ -161,12 +184,12 @@ fun ItemDetailScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = CharcoalBg,
-                    titleContentColor = TextPrimary
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         },
-        containerColor = CharcoalBg
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -178,38 +201,43 @@ fun ItemDetailScreen(
         ) {
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Item Header Card with Real Brand Icon & Title
+            // Header Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = CharcoalSurface),
-                border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CharcoalBorder))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(18.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(18.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    com.example.adere.presentation.components.VaultItemAvatar(
+                    VaultItemAvatar(
                         title = item.title,
                         category = item.category,
                         url = item.payload.url,
                         size = 52.dp,
                         iconSize = 28.dp,
-                        cornerRadius = 12.dp
+                        cornerRadius = 14.dp
                     )
+
                     Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
+
+                    Column {
                         Text(
                             text = item.title,
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = TextPrimary
-                            )
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
+
                         Spacer(modifier = Modifier.height(2.dp))
+
                         Text(
-                            text = item.category.title.uppercase(),
-                            style = MaterialTheme.typography.labelSmall.copy(
+                            text = item.category.title,
+                            style = MaterialTheme.typography.bodySmall.copy(
                                 fontWeight = FontWeight.SemiBold,
                                 color = EmeraldLight
                             )
@@ -218,75 +246,100 @@ fun ItemDetailScreen(
                 }
             }
 
-            // Category & Metadata Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(EmeraldContainer)
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = item.category.title.uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = EmeraldLight
+            // Category Specific Fields
+            when (item.category) {
+                VaultCategory.CRYPTO -> {
+                    // Crypto Seed Phrase & Private Key
+                    if (item.payload.cryptoSeedPhrase.isNotBlank()) {
+                        SecretFieldCard(
+                            label = "Crypto Seed Phrase (12/24 Words)",
+                            secretText = item.payload.cryptoSeedPhrase,
+                            isRevealed = isSeedRevealed,
+                            onToggleReveal = { isSeedRevealed = !isSeedRevealed },
+                            onCopy = { onCopySecret("Seed Phrase", item.payload.cryptoSeedPhrase) },
+                            testTag = "detail_copy_seed"
                         )
-                    )
+                    }
+
+                    if (item.payload.cryptoPrivateKey.isNotBlank()) {
+                        SecretFieldCard(
+                            label = "Crypto Private Key",
+                            secretText = item.payload.cryptoPrivateKey,
+                            isRevealed = isPrivateKeyRevealed,
+                            onToggleReveal = { isPrivateKeyRevealed = !isPrivateKeyRevealed },
+                            onCopy = { onCopySecret("Private Key", item.payload.cryptoPrivateKey) },
+                            testTag = "detail_copy_pk"
+                        )
+                    }
+
+                    if (item.payload.cryptoAddress.isNotBlank()) {
+                        PlainFieldCard(
+                            label = "Public Wallet Address",
+                            value = item.payload.cryptoAddress,
+                            onCopy = { onCopySecret("Wallet Address", item.payload.cryptoAddress) },
+                            testTag = "detail_copy_address"
+                        )
+                    }
                 }
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = "Updated: ${dateFormatter.format(Date(item.updatedAt))}",
-                    style = MaterialTheme.typography.labelSmall.copy(color = TextMuted)
-                )
+
+                VaultCategory.BANKING -> {
+                    if (item.payload.pin.isNotBlank()) {
+                        SecretFieldCard(
+                            label = "Card / Bank PIN",
+                            secretText = item.payload.pin,
+                            isRevealed = isPasswordRevealed,
+                            onToggleReveal = { isPasswordRevealed = !isPasswordRevealed },
+                            onCopy = { onCopySecret("PIN", item.payload.pin) },
+                            testTag = "detail_copy_pin"
+                        )
+                    }
+                }
+
+                else -> {}
             }
 
-            // Username / Account
+            // Username
             if (item.username.isNotBlank()) {
-                DetailFieldCard(
-                    label = if (item.category == VaultCategory.EMAIL) "Email" else "Username / Account",
+                PlainFieldCard(
+                    label = "Username / Email / Account",
                     value = item.username,
-                    onCopy = { onCopySecret("Username", item.username) }
+                    onCopy = { onCopySecret("Username", item.username) },
+                    testTag = "detail_copy_username"
                 )
             }
 
-            // Password
+            // Main Password
             if (item.payload.password.isNotBlank()) {
-                SecretDetailCard(
+                SecretFieldCard(
                     label = "Password",
-                    secret = item.payload.password,
+                    secretText = item.payload.password,
                     isRevealed = isPasswordRevealed,
                     onToggleReveal = { isPasswordRevealed = !isPasswordRevealed },
-                    onCopy = { onCopySecret("Password", item.payload.password) }
+                    onCopy = { onCopySecret("Password", item.payload.password) },
+                    testTag = "detail_copy_password"
                 )
             }
 
-            // PIN
-            if (item.payload.pin.isNotBlank()) {
-                SecretDetailCard(
-                    label = "PIN",
-                    secret = item.payload.pin,
-                    isRevealed = isPasswordRevealed,
-                    onToggleReveal = { isPasswordRevealed = !isPasswordRevealed },
-                    onCopy = { onCopySecret("PIN", item.payload.pin) }
+            // URL Field
+            if (item.payload.url.isNotBlank()) {
+                PlainFieldCard(
+                    label = "URL / Website",
+                    value = item.payload.url,
+                    onCopy = { onCopySecret("URL", item.payload.url) },
+                    testTag = "detail_copy_url"
                 )
             }
 
-            // Live 2FA / TOTP Card
+            // 2FA TOTP Card
             if (item.payload.totpSecret.isNotBlank()) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = CharcoalSurface),
-                    border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(EmeraldLight))
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
@@ -306,321 +359,362 @@ fun ItemDetailScreen(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        if (totpResult != null) {
+                        totpResult?.let { totp ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = totpResult.formattedCode,
-                                    style = MaterialTheme.typography.headlineMedium.copy(
-                                        fontWeight = FontWeight.ExtraBold,
+                                    text = totp.formattedCode,
+                                    style = MaterialTheme.typography.displayMedium.copy(
                                         fontFamily = FontFamily.Monospace,
+                                        fontWeight = FontWeight.ExtraBold,
                                         color = TextPrimary,
                                         letterSpacing = 2.sp
                                     )
                                 )
-                                IconButton(onClick = { onCopySecret("2FA Code", totpResult.code) }) {
+
+                                IconButton(
+                                    onClick = { onCopySecret("2FA Code", totp.code) },
+                                    modifier = Modifier.testTag("detail_copy_totp_code")
+                                ) {
                                     Icon(
                                         imageVector = Icons.Default.ContentCopy,
-                                        contentDescription = "Copy 2FA code",
+                                        contentDescription = "Copy 2FA Code",
                                         tint = EmeraldLight
                                     )
                                 }
                             }
+
                             Spacer(modifier = Modifier.height(8.dp))
-                            LinearProgressIndicator(
-                                progress = { totpResult.progress },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(4.dp)
-                                    .clip(RoundedCornerShape(2.dp)),
-                                color = if (totpResult.secondsRemaining > 5) EmeraldLight else SecurityRed,
+
+                            CircularProgressIndicator(
+                                progress = { totp.progress },
+                                modifier = Modifier.size(16.dp),
+                                color = EmeraldPrimary,
                                 trackColor = CharcoalSurfaceVariant
-                            )
-                        } else {
-                            Text(
-                                text = "Calculating OTP...",
-                                style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary)
                             )
                         }
                     }
-                }
-            }
-
-            // Website URL
-            if (item.payload.url.isNotBlank()) {
-                DetailFieldCard(
-                    label = "Website URL",
-                    value = item.payload.url,
-                    onCopy = { onCopySecret("URL", item.payload.url) }
-                )
-            }
-
-            // Crypto Vault Specifics
-            if (item.category == VaultCategory.CRYPTO) {
-                if (item.payload.cryptoNetwork.isNotBlank()) {
-                    DetailFieldCard(
-                        label = "Network / Blockchain",
-                        value = item.payload.cryptoNetwork,
-                        onCopy = null
-                    )
-                }
-
-                if (item.payload.cryptoAddress.isNotBlank()) {
-                    DetailFieldCard(
-                        label = "Public Wallet Address",
-                        value = item.payload.cryptoAddress,
-                        onCopy = { onCopySecret("Crypto Address", item.payload.cryptoAddress) }
-                    )
-                }
-
-                if (item.payload.cryptoSeedPhrase.isNotBlank()) {
-                    SecurityWarningCard(
-                        text = "Seed phrases provide full access to your funds. Never screenshot or share."
-                    )
-                    SecretDetailCard(
-                        label = "Recovery Seed Phrase",
-                        secret = item.payload.cryptoSeedPhrase,
-                        isRevealed = isSeedRevealed,
-                        onToggleReveal = { isSeedRevealed = !isSeedRevealed },
-                        onCopy = { onCopySecret("Seed Phrase", item.payload.cryptoSeedPhrase) }
-                    )
-                }
-
-                if (item.payload.cryptoPrivateKey.isNotBlank()) {
-                    SecretDetailCard(
-                        label = "Private Key",
-                        secret = item.payload.cryptoPrivateKey,
-                        isRevealed = isPrivateKeyRevealed,
-                        onToggleReveal = { isPrivateKeyRevealed = !isPrivateKeyRevealed },
-                        onCopy = { onCopySecret("Private Key", item.payload.cryptoPrivateKey) }
-                    )
-                }
-            }
-
-            // Wi-Fi Specifics
-            if (item.category == VaultCategory.WIFI) {
-                if (item.payload.wifiSsid.isNotBlank()) {
-                    DetailFieldCard(
-                        label = "Network Name (SSID)",
-                        value = item.payload.wifiSsid,
-                        onCopy = { onCopySecret("SSID", item.payload.wifiSsid) }
-                    )
-                }
-                if (item.payload.wifiPassword.isNotBlank()) {
-                    SecretDetailCard(
-                        label = "Wi-Fi Password",
-                        secret = item.payload.wifiPassword,
-                        isRevealed = isPasswordRevealed,
-                        onToggleReveal = { isPasswordRevealed = !isPasswordRevealed },
-                        onCopy = { onCopySecret("Wi-Fi Password", item.payload.wifiPassword) }
-                    )
                 }
             }
 
             // Recovery Codes
             if (item.payload.recoveryCodes.isNotEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = CharcoalSurface),
-                    border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CharcoalBorder))
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Backup Recovery Codes",
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        for (code in item.payload.recoveryCodes) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = if (isPasswordRevealed) code else "••••••••••••",
-                                    fontFamily = FontFamily.Monospace,
-                                    color = TextSecondary
-                                )
-                                IconButton(
-                                    onClick = { onCopySecret("Recovery Code", code) },
-                                    modifier = Modifier.size(28.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.ContentCopy,
-                                        contentDescription = "Copy code",
-                                        tint = EmeraldLight,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+                PlainFieldCard(
+                    label = "Recovery Codes",
+                    value = item.payload.recoveryCodes.joinToString(" • "),
+                    onCopy = { onCopySecret("Recovery Codes", item.payload.recoveryCodes.joinToString("\n")) },
+                    testTag = "detail_copy_recovery_codes"
+                )
             }
 
-            // Secure Notes
+            // Notes
             if (item.payload.notes.isNotBlank()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = CharcoalSurface),
-                    border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CharcoalBorder))
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Encrypted Notes",
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = item.payload.notes,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = TextSecondary,
-                                lineHeight = 20.sp
-                            )
-                        )
-                    }
+                PlainFieldCard(
+                    label = "Notes & Instructions",
+                    value = item.payload.notes,
+                    onCopy = { onCopySecret("Notes", item.payload.notes) },
+                    testTag = "detail_copy_notes"
+                )
+            }
+
+            // Timestamps Metadata
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = CharcoalSurface),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(
+                        text = "Created: ${dateFormatter.format(Date(item.createdAt))}",
+                        style = MaterialTheme.typography.bodySmall.copy(color = TextMuted)
+                    )
+                    Text(
+                        text = "Last Updated: ${dateFormatter.format(Date(item.updatedAt))}",
+                        style = MaterialTheme.typography.bodySmall.copy(color = TextMuted)
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
         }
+    }
 
-        // Delete Confirmation Dialog
-        if (showDeleteConfirmDialog) {
-            AlertDialog(
-                onDismissRequest = { showDeleteConfirmDialog = false },
-                title = { Text(text = "Delete Item", color = TextPrimary) },
-                text = {
-                    Text(
-                        text = "Are you sure you want to permanently delete '${item.title}' from your vault?",
-                        color = TextSecondary
+    // Delete Confirmation Dialog
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.Warning,
+                    contentDescription = null,
+                    tint = SecurityRed,
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Delete Vault Item?",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
                     )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            showDeleteConfirmDialog = false
-                            onDeleteClick(item.id)
-                        }
-                    ) {
-                        Text("Delete", color = SecurityRed, fontWeight = FontWeight.Bold)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                        Text("Cancel", color = TextSecondary)
-                    }
-                },
-                containerColor = CharcoalSurface,
-                shape = RoundedCornerShape(16.dp)
-            )
-        }
+                )
+            },
+            text = {
+                Text(
+                    text = "Are you sure you want to delete '${item.title}'? This action is permanent and cannot be undone.",
+                    style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        onDeleteClick(item.id)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = SecurityRed),
+                    modifier = Modifier.testTag("confirm_delete_button")
+                ) {
+                    Text("Delete Item", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Cancel", color = TextSecondary)
+                }
+            },
+            containerColor = CharcoalSurface,
+            shape = RoundedCornerShape(18.dp)
+        )
+    }
+
+    // Export PDF Dialog
+    if (showExportPdfDialog && onExportPdf != null) {
+        ItemExportPdfDialog(
+            onDismiss = { showExportPdfDialog = false },
+            onExportPdf = onExportPdf
+        )
     }
 }
 
 @Composable
-private fun DetailFieldCard(
+private fun ItemExportPdfDialog(
+    onDismiss: () -> Unit,
+    onExportPdf: (options: PdfExportManager.ExportOptions, isShare: Boolean) -> Unit
+) {
+    var includePasswords by remember { mutableStateOf(value = true) }
+    var includeNotes by remember { mutableStateOf(value = true) }
+    var includeTotp by remember { mutableStateOf(value = true) }
+    var includeCrypto by remember { mutableStateOf(value = true) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Export Emergency Sheet (PDF)") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Configure details to include in the printable PDF credential sheet:")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Include Passwords & PINs")
+                    Switch(
+                        checked = includePasswords,
+                        onCheckedChange = { includePasswords = it },
+                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = EmeraldPrimary)
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Include Notes & URLs")
+                    Switch(
+                        checked = includeNotes,
+                        onCheckedChange = { includeNotes = it },
+                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = EmeraldPrimary)
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Include 2FA Seeds & Recovery Codes")
+                    Switch(
+                        checked = includeTotp,
+                        onCheckedChange = { includeTotp = it },
+                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = EmeraldPrimary)
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Include Crypto Secrets")
+                    Switch(
+                        checked = includeCrypto,
+                        onCheckedChange = { includeCrypto = it },
+                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = EmeraldPrimary)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Row {
+                Button(
+                    onClick = {
+                        val opts = PdfExportManager.ExportOptions(
+                            includePasswords = includePasswords,
+                            includeNotes = includeNotes,
+                            includeRecoveryCodes = includeTotp,
+                            includeCryptoSecrets = includeCrypto
+                        )
+                        onExportPdf(opts, false)
+                        onDismiss()
+                    },
+                    modifier = Modifier.testTag("export_pdf_save_button")
+                ) {
+                    Text("Save")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = {
+                        val opts = PdfExportManager.ExportOptions(
+                            includePasswords = includePasswords,
+                            includeNotes = includeNotes,
+                            includeRecoveryCodes = includeTotp,
+                            includeCryptoSecrets = includeCrypto
+                        )
+                        onExportPdf(opts, true)
+                        onDismiss()
+                    },
+                    modifier = Modifier.testTag("export_pdf_share_button")
+                ) {
+                    Text("Share")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+private fun PlainFieldCard(
     label: String,
     value: String,
-    onCopy: (() -> Unit)?
+    onCopy: () -> Unit,
+    testTag: String
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = CharcoalSurface),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CharcoalBorder))
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall.copy(color = TextMuted)
+                    text = label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = TextSecondary,
+                        letterSpacing = 0.8.sp
+                    )
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = value,
                     style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Medium,
-                        color = TextPrimary
-                    )
-                )
-            }
-            if (onCopy != null) {
-                IconButton(onClick = onCopy) {
-                    Icon(
-                        imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "Copy $label",
-                        tint = EmeraldLight
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SecretDetailCard(
-    label: String,
-    secret: String,
-    isRevealed: Boolean,
-    onToggleReveal: () -> Unit,
-    onCopy: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = CharcoalSurface),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CharcoalBorder))
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall.copy(color = TextMuted)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = if (isRevealed) secret else "••••••••••••••••",
-                    style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.SemiBold,
-                        fontFamily = if (isRevealed) FontFamily.Monospace else FontFamily.Default,
                         color = TextPrimary
                     )
                 )
             }
-            IconButton(onClick = onToggleReveal) {
-                Icon(
-                    imageVector = if (isRevealed) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                    contentDescription = if (isRevealed) "Hide secret" else "Reveal secret",
-                    tint = TextSecondary
-                )
-            }
-            IconButton(onClick = onCopy) {
+
+            IconButton(onClick = onCopy, modifier = Modifier.testTag(testTag)) {
                 Icon(
                     imageVector = Icons.Default.ContentCopy,
                     contentDescription = "Copy $label",
                     tint = EmeraldLight
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun SecretFieldCard(
+    label: String,
+    secretText: String,
+    isRevealed: Boolean,
+    onToggleReveal: () -> Unit,
+    onCopy: () -> Unit,
+    testTag: String
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = CharcoalSurface),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = TextSecondary,
+                        letterSpacing = 0.8.sp
+                    )
+                )
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onToggleReveal) {
+                        Icon(
+                            imageVector = if (isRevealed) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (isRevealed) "Hide $label" else "Reveal $label",
+                            tint = TextSecondary
+                        )
+                    }
+
+                    IconButton(onClick = onCopy, modifier = Modifier.testTag(testTag)) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "Copy $label",
+                            tint = EmeraldLight
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = if (isRevealed) secretText else "••••••••••••••••",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isRevealed) TextPrimary else TextMuted,
+                    letterSpacing = if (isRevealed) 1.sp else 2.sp
+                )
+            )
         }
     }
 }

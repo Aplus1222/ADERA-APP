@@ -24,6 +24,8 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -36,6 +38,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -50,12 +53,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.theme.CleanBg
@@ -75,10 +80,10 @@ fun LockScreen(
     onTriggerBiometrics: () -> Unit,
     onUnlockWithPassword: (String, (Result<Unit>) -> Unit) -> Unit,
     onRecoverWithKey: (recoveryKey: String, newPassword: String, (Result<Unit>) -> Unit) -> Unit = { _, _, _ -> },
-    onResetVault: () -> Unit = {}
+    onResetVault: () -> Unit = {},
 ) {
     var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
+    var passwordVisible by remember { mutableStateOf(value = false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isAuthenticating by remember { mutableStateOf(false) }
     var showResetConfirmDialog by remember { mutableStateOf(false) }
@@ -116,16 +121,46 @@ fun LockScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(CleanBg)
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // Secure Vault Badge Pill
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = TotalSecurityPrimaryContainer
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = null,
+                    tint = TotalSecurityPrimary,
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "SECURE VAULT LOCKED",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = TotalSecurityPrimary,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 0.5.sp
+                    )
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Vault Lock Emblem with new App Logo
         Box(
             modifier = Modifier
-                .size(88.dp)
-                .shadow(12.dp, CircleShape, spotColor = TotalSecurityPrimary)
+                .size(92.dp)
+                .shadow(16.dp, CircleShape, spotColor = TotalSecurityPrimary)
                 .clip(CircleShape)
                 .background(TotalSecurityPrimaryContainer),
             contentAlignment = Alignment.Center
@@ -133,44 +168,46 @@ fun LockScreen(
             Image(
                 painter = painterResource(id = R.drawable.ic_launcher_foreground),
                 contentDescription = "Total Security Logo",
-                modifier = Modifier.size(76.dp)
+                modifier = Modifier.size(78.dp)
             )
         }
 
         Spacer(modifier = Modifier.height(20.dp))
 
         Text(
-            text = "Authentication Required",
+            text = "Welcome Back",
             style = MaterialTheme.typography.headlineLarge.copy(
                 fontWeight = FontWeight.ExtraBold,
                 color = TextDarkPrimary,
-                fontSize = 24.sp
+                fontSize = 26.sp
             )
         )
 
         Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = "Fingerprint or face unlock required before viewing stored secrets",
+            text = "Authenticate with biometrics or master password to access encrypted records",
             style = MaterialTheme.typography.bodyMedium.copy(color = TextDarkSecondary),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(28.dp))
 
         Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(18.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha = 0.08f)),
+            shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = CleanSurface),
-            border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CleanBorder))
+            border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(CleanBorder))
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
+            Column(modifier = Modifier.padding(24.dp)) {
                 if (isBiometricAvailable) {
                     Button(
                         onClick = onTriggerBiometrics,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp)
+                            .shadow(4.dp, RoundedCornerShape(14.dp), spotColor = TotalSecurityPrimary)
                             .testTag("unlock_biometric_button"),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -178,21 +215,28 @@ fun LockScreen(
                             contentColor = Color.White
                         )
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.Fingerprint,
                                 contentDescription = null,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = "Unlock with Fingerprint or Face",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                text = "Unlock with Biometrics",
+                                style = MaterialTheme.typography.titleSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                ),
+                                maxLines = 1
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -217,7 +261,7 @@ fun LockScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
 
                 OutlinedTextField(
@@ -309,13 +353,15 @@ fun LockScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(46.dp)
                         .testTag("lock_screen_recover_button"),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = TotalSecurityPrimary),
                     border = BorderStroke(1.dp, TotalSecurityPrimary.copy(alpha = 0.5f))
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Default.VpnKey,
                             contentDescription = null,
@@ -323,8 +369,12 @@ fun LockScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Forgot Password? Use Recovery Key",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                            text = "Use Master Recovery Key",
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            ),
+                            maxLines = 1
                         )
                     }
                 }
@@ -562,5 +612,7 @@ fun LockScreen(
                 shape = RoundedCornerShape(16.dp)
             )
         }
+
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }

@@ -79,6 +79,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -171,26 +172,6 @@ fun AddEditItemScreen(
     var showAddCustomFieldDialog by remember { mutableStateOf(false) }
     var customFieldKeyInput by remember { mutableStateOf("") }
     var customFieldValueInput by remember { mutableStateOf("") }
-
-    // In-form Password Generator Sheet/Dialog
-    var showGeneratorDialog by remember { mutableStateOf(false) }
-    var genLength by remember { mutableFloatStateOf(16f) }
-    var genUseUpper by remember { mutableStateOf(true) }
-    var genUseLower by remember { mutableStateOf(true) }
-    var genUseDigits by remember { mutableStateOf(true) }
-    var genUseSymbols by remember { mutableStateOf(true) }
-    var generatedPreview by remember { mutableStateOf("") }
-
-    fun refreshGeneratedPassword() {
-        val options = PasswordGenerator.GeneratorOptions(
-            length = genLength.toInt(),
-            includeUppercase = genUseUpper,
-            includeLowercase = genUseLower,
-            includeDigits = genUseDigits,
-            includeSymbols = genUseSymbols
-        )
-        generatedPreview = PasswordGenerator.generate(options).password
-    }
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -395,6 +376,7 @@ fun AddEditItemScreen(
                             label = { Text("Title (e.g. Google, GitHub, Chase)") },
                             placeholder = { Text("Enter a recognizable label") },
                             singleLine = true,
+                            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
                             colors = cleanTextFieldColors(),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
@@ -519,7 +501,16 @@ fun AddEditItemScreen(
                                 label = { Text("Card ATM PIN") },
                                 placeholder = { Text("4-digit code") },
                                 singleLine = true,
-                                visualTransformation = PasswordVisualTransformation(),
+                                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                trailingIcon = {
+                                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                        Icon(
+                                            imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                            contentDescription = if (passwordVisible) "Hide PIN" else "Show PIN",
+                                            tint = TextDarkSecondary
+                                        )
+                                    }
+                                },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                                 colors = cleanTextFieldColors(),
                                 shape = RoundedCornerShape(12.dp),
@@ -735,12 +726,26 @@ fun AddEditItemScreen(
                                 singleLine = true,
                                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                 trailingIcon = {
-                                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                        Icon(
-                                            imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                            contentDescription = null,
-                                            tint = TextDarkSecondary
-                                        )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                            Icon(
+                                                imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                                contentDescription = null,
+                                                tint = TextDarkSecondary
+                                            )
+                                        }
+                                        IconButton(onClick = { 
+                                            wifiPassword = PasswordGenerator.generate(
+                                                PasswordGenerator.GeneratorOptions(length = 16, includeSymbols = false)
+                                            ).password
+                                            passwordVisible = true
+                                        }) {
+                                            Icon(
+                                                imageVector = Icons.Default.AutoAwesome,
+                                                contentDescription = "Generate strong Wi-Fi password",
+                                                tint = TotalSecurityPrimary
+                                            )
+                                        }
                                     }
                                 },
                                 colors = cleanTextFieldColors(),
@@ -827,6 +832,7 @@ fun AddEditItemScreen(
                                 onValueChange = { username = it },
                                 label = { Text(if (category == VaultCategory.EMAIL) "Email Address" else "Username / Email") },
                                 singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                                 colors = cleanTextFieldColors(),
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier
@@ -834,7 +840,7 @@ fun AddEditItemScreen(
                                     .testTag("item_username_input")
                             )
 
-                            // Password Field with Generator Action
+                            // Password Field
                             Column {
                                 OutlinedTextField(
                                     value = password,
@@ -843,24 +849,27 @@ fun AddEditItemScreen(
                                     singleLine = true,
                                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                     trailingIcon = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            IconButton(
-                                                onClick = {
-                                                    refreshGeneratedPassword()
-                                                    showGeneratorDialog = true
-                                                }
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.AutoAwesome,
-                                                    contentDescription = "Generate Strong Password",
-                                                    tint = TotalSecurityPrimary
-                                                )
-                                            }
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(end = 4.dp)
+                                        ) {
                                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                                 Icon(
                                                     imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                                    contentDescription = null,
+                                                    contentDescription = if (passwordVisible) "Hide password" else "Show password",
                                                     tint = TextDarkSecondary
+                                                )
+                                            }
+                                            IconButton(onClick = { 
+                                                password = PasswordGenerator.generate(
+                                                    PasswordGenerator.GeneratorOptions(length = 20)
+                                                ).password
+                                                passwordVisible = true
+                                            }) {
+                                                Icon(
+                                                    imageVector = Icons.Default.AutoAwesome,
+                                                    contentDescription = "Generate strong password",
+                                                    tint = TotalSecurityPrimary
                                                 )
                                             }
                                         }
@@ -1169,186 +1178,6 @@ fun AddEditItemScreen(
 
             Spacer(modifier = Modifier.height(40.dp))
         }
-    }
-
-    // Generator Dialog
-    if (showGeneratorDialog) {
-        AlertDialog(
-            onDismissRequest = { showGeneratorDialog = false },
-            icon = {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(TotalSecurityPrimaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.AutoAwesome,
-                        contentDescription = null,
-                        tint = TotalSecurityPrimary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            },
-            title = {
-                Text(
-                    text = "Strong Password Generator",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = TextDarkPrimary
-                    )
-                )
-            },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Generated Preview Box
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = CleanSurfaceVariant,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(14.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = generatedPreview,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = TextDarkPrimary,
-                                    letterSpacing = 1.sp
-                                ),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-
-                    // Length Slider
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Length: ${genLength.toInt()} characters",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = TextDarkPrimary
-                            )
-                        )
-                    }
-
-                    Slider(
-                        value = genLength,
-                        onValueChange = {
-                            genLength = it
-                            refreshGeneratedPassword()
-                        },
-                        valueRange = 8f..40f,
-                        steps = 31,
-                        colors = SliderDefaults.colors(
-                            thumbColor = TotalSecurityPrimary,
-                            activeTrackColor = TotalSecurityPrimary
-                        )
-                    )
-
-                    // Options Chips
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        FilterChip(
-                            selected = genUseUpper,
-                            onClick = {
-                                genUseUpper = !genUseUpper
-                                refreshGeneratedPassword()
-                            },
-                            label = { Text("A-Z", fontSize = 11.sp) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = TotalSecurityPrimary,
-                                selectedLabelColor = Color.White
-                            )
-                        )
-                        FilterChip(
-                            selected = genUseLower,
-                            onClick = {
-                                genUseLower = !genUseLower
-                                refreshGeneratedPassword()
-                            },
-                            label = { Text("a-z", fontSize = 11.sp) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = TotalSecurityPrimary,
-                                selectedLabelColor = Color.White
-                            )
-                        )
-                        FilterChip(
-                            selected = genUseDigits,
-                            onClick = {
-                                genUseDigits = !genUseDigits
-                                refreshGeneratedPassword()
-                            },
-                            label = { Text("0-9", fontSize = 11.sp) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = TotalSecurityPrimary,
-                                selectedLabelColor = Color.White
-                            )
-                        )
-                        FilterChip(
-                            selected = genUseSymbols,
-                            onClick = {
-                                genUseSymbols = !genUseSymbols
-                                refreshGeneratedPassword()
-                            },
-                            label = { Text("!@#$", fontSize = 11.sp) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = TotalSecurityPrimary,
-                                selectedLabelColor = Color.White
-                            )
-                        )
-                    }
-
-                    TextButton(
-                        onClick = { refreshGeneratedPassword() },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = null,
-                            tint = TotalSecurityPrimary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Reroll Password",
-                            color = TotalSecurityPrimary,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        password = generatedPreview
-                        showGeneratorDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = TotalSecurityPrimary)
-                ) {
-                    Text("Apply to Password", color = Color.White, fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showGeneratorDialog = false }) {
-                    Text("Cancel", color = TextDarkSecondary)
-                }
-            },
-            containerColor = CleanSurface,
-            shape = RoundedCornerShape(18.dp)
-        )
     }
 
     // Add Custom Field Dialog

@@ -5,13 +5,12 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -28,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.adere.core.backup.PdfExportManager
 import com.example.adere.core.utilities.ClipboardSecurityHelper
 import com.example.adere.domain.model.VaultCategory
 import com.example.adere.domain.repository.VaultLockState
@@ -62,8 +62,8 @@ enum class NavDestination(val label: String) {
 fun AdereApp(
     viewModel: AdereViewModel,
     onTriggerBiometrics: () -> Unit,
-    onExportPdfSave: (com.example.adere.core.backup.PdfExportManager.ExportOptions) -> Unit = {},
-    onExportPdfShare: (com.example.adere.core.backup.PdfExportManager.ExportOptions) -> Unit = {}
+    onExportPdfSave: (PdfExportManager.ExportOptions) -> Unit = {},
+    onExportPdfShare: (PdfExportManager.ExportOptions) -> Unit = {},
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -81,10 +81,13 @@ fun AdereApp(
     val screenshotProtection by viewModel.screenshotProtection.collectAsStateWithLifecycle()
     val clipboardClearSeconds by viewModel.clipboardClearSeconds.collectAsStateWithLifecycle()
     val themePalette by viewModel.themePalette.collectAsStateWithLifecycle()
+    val generatorOptions by viewModel.generatorOptions.collectAsStateWithLifecycle()
+    val notificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle()
+    val hideRecentAppsContent by viewModel.hideRecentAppsContent.collectAsStateWithLifecycle()
 
     var currentTab by remember { mutableStateOf(NavDestination.HOME) }
     var selectedItemIdForDetail by remember { mutableStateOf<String?>(null) }
-    var isAddingItem by remember { mutableStateOf(false) }
+    var isAddingItem by remember { mutableStateOf(value = false) }
     var itemCategoryForAdd by remember { mutableStateOf(VaultCategory.SOCIAL) }
     var prefilledPasswordForAdd by remember { mutableStateOf<String?>(null) }
     var prefilledTitleForAdd by remember { mutableStateOf<String?>(null) }
@@ -97,7 +100,7 @@ fun AdereApp(
             label = label,
             text = secret,
             autoClearSeconds = clipboardClearSeconds,
-            coroutineScope = coroutineScope
+            coroutineScope = coroutineScope,
         )
         val clearMsg = if (clipboardClearSeconds > 0) " (Auto-clears in ${clipboardClearSeconds}s)" else ""
         Toast.makeText(context, "$label copied to clipboard$clearMsg", Toast.LENGTH_SHORT).show()
@@ -112,7 +115,7 @@ fun AdereApp(
                 onSetupVault = { pass, bio, cb ->
                     viewModel.initializeMasterPassword(pass, bio, cb)
                 },
-                onGetActiveRecoveryKey = { viewModel.getActiveRecoveryKey() }
+                onGetActiveRecoveryKey = viewModel::getActiveRecoveryKey,
             )
         }
 
@@ -135,7 +138,7 @@ fun AdereApp(
                     viewModel.resetVault {
                         Toast.makeText(context, "Vault has been reset", Toast.LENGTH_SHORT).show()
                     }
-                }
+                },
             )
         }
 
@@ -148,7 +151,7 @@ fun AdereApp(
                     prefilledTitleForAdd = null
                     prefilledUrlForAdd = null
                 }
-                val initialItem = if (prefilledPasswordForAdd != null || prefilledTitleForAdd != null) {
+                val initialItem = if ((prefilledPasswordForAdd != null) || (prefilledTitleForAdd != null)) {
                     com.example.adere.domain.model.VaultItem(
                         title = prefilledTitleForAdd ?: "",
                         category = itemCategoryForAdd,
@@ -221,7 +224,10 @@ fun AdereApp(
                             viewModel.toggleFavorite(id, currentFav)
                         },
                         onCopySecret = { label, secret -> copySecret(label, secret) },
-                        onLockClick = { viewModel.lockVault() }
+                        onLockClick = { viewModel.lockVault() },
+                        onExportPdf = { options, isShare ->
+                            if (isShare) onExportPdfShare(options) else onExportPdfSave(options)
+                        }
                     )
                 } else {
                     selectedItemIdForDetail = null
@@ -238,7 +244,7 @@ fun AdereApp(
                             }
                         )
                     },
-                    containerColor = CharcoalBg
+                    containerColor = MaterialTheme.colorScheme.background
                 ) { innerPadding ->
                     Box(
                         modifier = Modifier
@@ -320,11 +326,17 @@ fun AdereApp(
 
                             NavDestination.SETTINGS -> {
                                 SettingsScreen(
+                                    totalCredentialsCount = rawItems.size,
+                                    favoritesCount = rawItems.count { it.isFavorite },
+                                    isVaultProtected = lockState == VaultLockState.Unlocked,
                                     biometricEnabled = biometricEnabled,
                                     autoLockSeconds = autoLockSeconds,
                                     screenshotProtection = screenshotProtection,
                                     clipboardClearSeconds = clipboardClearSeconds,
+                                    hideRecentAppsContent = hideRecentAppsContent,
+                                    notificationsEnabled = notificationsEnabled,
                                     themePalette = themePalette,
+                                    generatorOptions = generatorOptions,
                                     onSelectThemePalette = { palette ->
                                         viewModel.setThemePalette(palette)
                                         Toast.makeText(context, "Theme updated: ${palette.title}", Toast.LENGTH_SHORT).show()
@@ -339,8 +351,11 @@ fun AdereApp(
                                         }
                                     },
                                     onSetAutoLockSeconds = { s -> viewModel.setAutoLockSeconds(s) },
-                                    onSetScreenshotProtection = { p -> viewModel.setScreenshotProtection(p) },
+                                    onToggleScreenshotProtection = { p -> viewModel.setScreenshotProtection(p) },
                                     onSetClipboardClearSeconds = { c -> viewModel.setClipboardClearSeconds(c) },
+                                    onToggleHideRecentApps = { h -> viewModel.setHideRecentAppsContent(h) },
+                                    onToggleNotifications = { n -> viewModel.setNotificationsEnabled(n) },
+                                    onUpdateGeneratorOptions = { opts -> viewModel.updateGeneratorOptions(opts) },
                                     onChangeMasterPassword = { old, new, cb ->
                                         viewModel.changeMasterPassword(old, new, cb)
                                     },
@@ -349,8 +364,8 @@ fun AdereApp(
                                             cb(res.map { it.backupString })
                                         }
                                     },
-                                    onRestoreBackup = { content, pass, cb ->
-                                        viewModel.restoreBackup(content, pass, cb)
+                                    onRestoreBackup = { backupContent, passphrase, cb ->
+                                        viewModel.restoreBackup(backupContent, passphrase, cb)
                                     },
                                     onExportPdf = { options, isShare ->
                                         if (isShare) {
@@ -359,16 +374,9 @@ fun AdereApp(
                                             onExportPdfSave(options)
                                         }
                                     },
-                                    onVerifyMasterPassword = { pass, cb ->
-                                        viewModel.unlockWithPassword(pass) { res ->
-                                            cb(res)
-                                        }
-                                    },
                                     onGetRecoveryKey = { viewModel.getActiveRecoveryKey() },
-                                    onRegenerateRecoveryKey = { cb -> viewModel.regenerateRecoveryKey(cb) },
-                                    onPanicLock = {
-                                        viewModel.lockVault()
-                                        Toast.makeText(context, "Vault Locked", Toast.LENGTH_SHORT).show()
+                                    onRegenerateRecoveryKey = { cb ->
+                                        viewModel.regenerateRecoveryKey(cb)
                                     },
                                     onResetVault = {
                                         viewModel.resetVault {
@@ -384,12 +392,3 @@ fun AdereApp(
         }
     }
 }
-
-@Composable
-private fun navItemColors() = NavigationBarItemDefaults.colors(
-    selectedIconColor = com.example.ui.theme.LocalThemeAccents.current.primaryLight,
-    selectedTextColor = com.example.ui.theme.LocalThemeAccents.current.primaryLight,
-    unselectedIconColor = TextSecondary,
-    unselectedTextColor = TextSecondary,
-    indicatorColor = com.example.ui.theme.LocalThemeAccents.current.primaryGlow
-)

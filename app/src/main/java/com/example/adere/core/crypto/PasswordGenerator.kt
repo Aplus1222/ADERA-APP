@@ -26,7 +26,7 @@ object PasswordGenerator {
         "quantum", "radar", "shield", "titan", "unity", "vortex", "zenith", "aurora",
         "boulder", "cipher", "dynamo", "echo", "frost", "glacier", "harbor", "island",
         "javelin", "knight", "legacy", "monolith", "nebula", "onyx", "pioneer", "quasar",
-        "relic", "summit", "timber", "uptime", "valiant", "wildcat", "apex", "bastion"
+        "relic", "summit", "timber", "uptime", "valiant", "wildcat", "apex", "bastion",
     )
 
     data class GeneratorOptions(
@@ -38,21 +38,21 @@ object PasswordGenerator {
         val excludeAmbiguous: Boolean = true,
         val isPassphraseMode: Boolean = false,
         val passphraseWordCount: Int = 4,
-        val passphraseSeparator: String = "-"
+        val passphraseSeparator: String = "-",
     )
 
-    enum class PasswordStrength(val label: String, val score: Int) {
-        VERY_WEAK("Very Weak", 0),
-        WEAK("Weak", 1),
-        FAIR("Fair", 2),
-        STRONG("Strong", 3),
-        VERY_STRONG("Very Strong", 4)
+    enum class PasswordStrength(val label: String) {
+        VERY_WEAK("Very Weak"),
+        WEAK("Weak"),
+        FAIR("Fair"),
+        STRONG("Strong"),
+        VERY_STRONG("Very Strong"),
     }
 
     data class GenerationResult(
         val password: String,
         val strength: PasswordStrength,
-        val entropyBits: Double
+        val entropyBits: Double,
     )
 
     fun generate(options: GeneratorOptions): GenerationResult {
@@ -61,13 +61,13 @@ object PasswordGenerator {
             for (i in 0 until options.passphraseWordCount) {
                 val index = secureRandom.nextInt(WORD_LIST.size)
                 var word = WORD_LIST[index]
-                if (options.includeUppercase && i == 0) {
+                if (options.includeUppercase && (i == 0)) {
                     word = word.replaceFirstChar { it.uppercase() }
                 }
                 words.add(word)
             }
             if (options.includeDigits) {
-                words.add(secureRandom.nextInt(10, 99).toString())
+                words.add((secureRandom.nextInt(90) + 10).toString())
             }
             val passphrase = words.joinToString(options.passphraseSeparator)
             val entropy = calculateEntropy(passphrase)
@@ -114,7 +114,7 @@ object PasswordGenerator {
         }
 
         // Fisher-Yates shuffle with SecureRandom
-        for (i in passwordChars.size - 1 downTo 1) {
+        for (i in (passwordChars.size - 1) downTo 1) {
             val j = secureRandom.nextInt(i + 1)
             val temp = passwordChars[i]
             passwordChars[i] = passwordChars[j]
@@ -140,9 +140,9 @@ object PasswordGenerator {
 
     fun evaluateStrength(entropy: Double, length: Int): PasswordStrength {
         return when {
-            length < 8 || entropy < 28.0 -> PasswordStrength.VERY_WEAK
-            length < 12 || entropy < 45.0 -> PasswordStrength.WEAK
-            length < 16 || entropy < 65.0 -> PasswordStrength.FAIR
+            (length < 8) || (entropy < 28.0) -> PasswordStrength.VERY_WEAK
+            (length < 12) || (entropy < 45.0) -> PasswordStrength.WEAK
+            (length < 16) || (entropy < 65.0) -> PasswordStrength.FAIR
             entropy < 85.0 -> PasswordStrength.STRONG
             else -> PasswordStrength.VERY_STRONG
         }

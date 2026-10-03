@@ -10,7 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,10 +25,11 @@ import com.example.ui.theme.LocalThemeAccents
  * Renders an atmospheric security background with a rich radial gradient glow at top,
  * subtle cryptographic circuit gridlines, and layered depth.
  */
+@Suppress("unused")
 @Composable
 fun VaultAtmosphereBackground(
     modifier: Modifier = Modifier,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     val accents = LocalThemeAccents.current
 
@@ -83,6 +83,7 @@ fun VaultAtmosphereBackground(
 /**
  * Premium Vault Card with styled gradient outline, soft dark elevation, and rounded corners.
  */
+@Suppress("unused")
 @Composable
 fun VaultGlassCard(
     modifier: Modifier = Modifier,

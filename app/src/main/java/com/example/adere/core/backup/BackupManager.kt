@@ -8,6 +8,7 @@ import com.example.adere.domain.model.VaultItem
 import com.example.adere.domain.model.VaultItemPayload
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.UUID
 
 /**
  * Adere Encrypted Backup and Restore Manager (.adere format).
@@ -80,9 +81,10 @@ object BackupManager {
         backupPassphrase: CharArray
     ): Result<RestorePreview> {
         return try {
-            val parts = backupContent.trim().split(":")
+            val cleanContent = backupContent.trim().replace("\r", "").replace("\n", "")
+            val parts = cleanContent.split(":")
             if (parts.size != 5 || parts[0] != BACKUP_MAGIC_PREFIX) {
-                return Result.failure(IllegalArgumentException("Invalid or unsupported Adere backup file format."))
+                return Result.failure(IllegalArgumentException("Invalid or unsupported Adere backup file format. Expected 5 colon-separated sections."))
             }
 
             val version = parts[1]
@@ -95,20 +97,29 @@ object BackupManager {
             val ciphertext = Base64Codec.decode(parts[4])
 
             val derivedKey = CryptoEngine.deriveKey(backupPassphrase, salt)
-            val decryptedBytes = CryptoEngine.decrypt(ciphertext, iv, derivedKey)
-            val decryptedJson = String(decryptedBytes, Charsets.UTF_8)
+            val decryptedBytes = try {
+                CryptoEngine.decrypt(ciphertext, iv, derivedKey)
+            } catch (e: Exception) {
+                return Result.failure(IllegalArgumentException("Incorrect passphrase or corrupted backup payload."))
+            }
 
+            val decryptedJson = String(decryptedBytes, Charsets.UTF_8)
             val root = JSONObject(decryptedJson)
-            val itemsArray = root.getJSONArray("items")
+            val itemsArray = root.optJSONArray("items") ?: JSONArray()
             val itemsList = mutableListOf<VaultItem>()
 
             for (i in 0 until itemsArray.length()) {
                 val obj = itemsArray.getJSONObject(i)
-                val payloadJson = obj.optString("payload", "{}")
+                val payloadObj = obj.opt("payload")
+                val payloadJson = when (payloadObj) {
+                    is JSONObject -> payloadObj.toString()
+                    is String -> payloadObj
+                    else -> "{}"
+                }
                 val item = VaultItem(
-                    id = obj.getString("id"),
+                    id = obj.optString("id", UUID.randomUUID().toString()),
                     category = VaultCategory.fromName(obj.optString("category", "OTHER")),
-                    title = obj.getString("title"),
+                    title = obj.optString("title", "Untitled Secret"),
                     username = obj.optString("username", ""),
                     payload = VaultItemPayload.fromJson(payloadJson),
                     isFavorite = obj.optBoolean("isFavorite", false),
@@ -120,8 +131,10 @@ object BackupManager {
             }
 
             Result.success(RestorePreview(itemsList, itemsList.size, version))
+        } catch (e: IllegalArgumentException) {
+            Result.failure(e)
         } catch (e: Exception) {
-            Result.failure(Exception("Unable to decrypt backup. The password may be incorrect or the backup is corrupted."))
+            Result.failure(Exception("Unable to restore backup: ${e.message ?: "Invalid payload or wrong passphrase"}"))
         }
     }
 

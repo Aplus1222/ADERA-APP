@@ -1,6 +1,7 @@
 package com.example
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import android.widget.Toast
@@ -10,22 +11,19 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.adere.AdereApplication
 import com.example.adere.core.backup.PdfExportManager
 import com.example.adere.presentation.navigation.AdereApp
 import com.example.adere.presentation.viewmodels.AdereViewModel
 import com.example.ui.theme.AdereTheme
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
-
-import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 class MainActivity : FragmentActivity() {
 
@@ -34,7 +32,7 @@ class MainActivity : FragmentActivity() {
         AdereViewModel.Factory(
             repository = container.vaultRepository,
             sessionManager = container.sessionManager,
-            configStore = container.configStore
+            configStore = container.configStore,
         )
     }
 
@@ -48,8 +46,14 @@ class MainActivity : FragmentActivity() {
         if (uri != null) {
             val options = pendingPdfExportOptions ?: PdfExportManager.ExportOptions()
             try {
-                contentResolver.openOutputStream(uri)?.use { outputStream ->
+                val outputStream = contentResolver.openOutputStream(uri)
+                if (outputStream != null) {
                     viewModel.exportToPdf(options, outputStream) { result ->
+                        try {
+                            outputStream.flush()
+                            outputStream.close()
+                        } catch (_: Exception) {}
+
                         if (result.isSuccess) {
                             Toast.makeText(
                                 this,
@@ -64,6 +68,8 @@ class MainActivity : FragmentActivity() {
                             ).show()
                         }
                     }
+                } else {
+                    Toast.makeText(this, "Error opening file for writing", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 Toast.makeText(this, "Error saving PDF: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -74,23 +80,30 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        // Ensure FLAG_SECURE is permanently cleared so that the browser streaming emulator renders video properly
         window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
 
         setContent {
             val themePalette by viewModel.themePalette.collectAsStateWithLifecycle()
+            val screenshotProtection by viewModel.screenshotProtection.collectAsStateWithLifecycle()
+
+            LaunchedEffect(screenshotProtection) {
+                if (screenshotProtection) {
+                    window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+                } else {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                }
+            }
+
             AdereTheme(palette = themePalette) {
                 AdereApp(
                     viewModel = viewModel,
-                    onTriggerBiometrics = { triggerBiometricPrompt() },
+                    onTriggerBiometrics = ::triggerBiometricPrompt,
                     onExportPdfSave = { options ->
                         pendingPdfExportOptions = options
                         isSystemPickerActive = true
                         createPdfDocumentLauncher.launch("adere_vault_passwords_${System.currentTimeMillis()}.pdf")
                     },
-                    onExportPdfShare = { options ->
-                        sharePdfDocument(options)
-                    }
+                    onExportPdfShare = ::sharePdfDocument,
                 )
             }
         }
@@ -101,29 +114,33 @@ class MainActivity : FragmentActivity() {
             PdfExportManager.cleanTemporaryExports(cacheDir)
             val exportDir = File(cacheDir, "exports").apply { mkdirs() }
             val pdfFile = File(exportDir, "adere_vault_passwords_${System.currentTimeMillis()}.pdf")
-            FileOutputStream(pdfFile).use { outputStream ->
-                viewModel.exportToPdf(options, outputStream) { result ->
-                    if (result.isSuccess) {
-                        val fileUri = FileProvider.getUriForFile(
-                            this,
-                            "$packageName.fileprovider",
-                            pdfFile
-                        )
-                        val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                            type = "application/pdf"
-                            putExtra(Intent.EXTRA_STREAM, fileUri)
-                            putExtra(Intent.EXTRA_SUBJECT, "Adere Vault Passwords Export")
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        }
-                        isSystemPickerActive = true
-                        startActivity(Intent.createChooser(sendIntent, "Print or Share Vault PDF"))
-                    } else {
-                        Toast.makeText(
-                            this,
-                            "Failed to generate PDF: ${result.exceptionOrNull()?.message}",
-                            Toast.LENGTH_SHORT
-                        ).show()
+            val outputStream = FileOutputStream(pdfFile)
+            viewModel.exportToPdf(options, outputStream) { result ->
+                try {
+                    outputStream.flush()
+                    outputStream.close()
+                } catch (_: Exception) {}
+
+                if (result.isSuccess) {
+                    val fileUri = FileProvider.getUriForFile(
+                        this,
+                        "$packageName.fileprovider",
+                        pdfFile
+                    )
+                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "application/pdf"
+                        putExtra(Intent.EXTRA_STREAM, fileUri)
+                        putExtra(Intent.EXTRA_SUBJECT, "Adere Vault Passwords Export")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
+                    isSystemPickerActive = true
+                    startActivity(Intent.createChooser(sendIntent, "Print or Share Vault PDF"))
+                } else {
+                    Toast.makeText(
+                        this,
+                        "Failed to generate PDF: ${result.exceptionOrNull()?.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         } catch (e: Exception) {
@@ -139,7 +156,7 @@ class MainActivity : FragmentActivity() {
     override fun onStop() {
         super.onStop()
         // If immediate auto-lock is configured, lock right away (unless system picker is active)
-        if (!isSystemPickerActive && viewModel.autoLockSeconds.value == 0) {
+        if (!isSystemPickerActive && (viewModel.autoLockSeconds.value == 0)) {
             viewModel.lockVault()
         }
         isSystemPickerActive = false
@@ -152,7 +169,7 @@ class MainActivity : FragmentActivity() {
 
     private fun triggerBiometricPrompt() {
         val biometricManager = BiometricManager.from(this)
-        val hasCredential = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R
+        val hasCredential = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
         val authenticators = if (hasCredential) {
             BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
         } else {
@@ -211,7 +228,6 @@ class MainActivity : FragmentActivity() {
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
-                    // If user tapped negative button or canceled, allow graceful fallback to master password
                     if (errorCode != BiometricPrompt.ERROR_USER_CANCELED &&
                         errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON
                     ) {

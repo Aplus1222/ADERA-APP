@@ -2,7 +2,6 @@ package com.example.adere.presentation.screens
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -64,13 +64,14 @@ import com.example.ui.theme.TextDarkSecondary
 @Composable
 fun SecurityHealthScreen(
     healthReport: PasswordHealthAnalyzer.VaultHealthReport,
-    items: List<VaultItem>,
-    onItemClick: (String) -> Unit,
+    @Suppress("UNUSED_PARAMETER") items: List<VaultItem>,
+    @Suppress("UNUSED_PARAMETER") onItemClick: (String) -> Unit,
     onLockClick: () -> Unit,
-    onBackClick: () -> Unit = onLockClick
+    onBackClick: () -> Unit = onLockClick,
+    onHealthCardClick: () -> Unit = {},
 ) {
     Scaffold(
-        containerColor = CleanBg
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -116,59 +117,81 @@ fun SecurityHealthScreen(
                 ) {
                     Canvas(modifier = Modifier.size(150.dp)) {
                         val strokeWidth = 22.dp.toPx()
-                        val diameter = size.minDimension - strokeWidth
-                        val radius = diameter / 2
-                        val center = Offset(size.width / 2, size.height / 2)
 
-                        // 4 colored segments matching Screen 5
-                        // Safe (Blue), Refused (Yellow), Risk (Red), Compromised (Mint)
-                        val total = (healthReport.totalPasswords).coerceAtLeast(1).toFloat()
-                        val safeCount = (healthReport.totalPasswords - healthReport.weakCount - healthReport.reusedCount).coerceAtLeast(4)
-                        val safeSweep = ((safeCount.toFloat() / total) * 360f).coerceIn(40f, 150f)
-                        val compromisedSweep = ((healthReport.oldCount.coerceAtLeast(4).toFloat() / total) * 360f).coerceIn(40f, 120f)
-                        val riskSweep = ((healthReport.weakCount.coerceAtLeast(4).toFloat() / total) * 360f).coerceIn(40f, 120f)
-                        val refusedSweep = (360f - safeSweep - compromisedSweep - riskSweep).coerceAtLeast(40f)
+                        val total = healthReport.totalPasswords.coerceAtLeast(1).toFloat()
+                        val safeCount = (healthReport.totalPasswords - healthReport.weakCount - healthReport.reusedCount - healthReport.oldCount).coerceAtLeast(0)
+                        val weakCount = healthReport.weakCount
+                        val reusedCount = healthReport.reusedCount
+                        val oldCount = healthReport.oldCount
 
-                        // 1. Safe (Royal Blue)
-                        drawArc(
-                            color = HealthSafeBlue,
-                            startAngle = -90f,
-                            sweepAngle = 110f,
-                            useCenter = false,
-                            style = Stroke(width = strokeWidth)
-                        )
-                        // 2. Refused (Yellow)
-                        drawArc(
-                            color = HealthRefusedYellow,
-                            startAngle = 20f,
-                            sweepAngle = 80f,
-                            useCenter = false,
-                            style = Stroke(width = strokeWidth)
-                        )
-                        // 3. Weak / Risk (Red)
-                        drawArc(
-                            color = HealthRiskRed,
-                            startAngle = 100f,
-                            sweepAngle = 90f,
-                            useCenter = false,
-                            style = Stroke(width = strokeWidth)
-                        )
-                        // 4. Compromised (Mint Teal)
-                        drawArc(
-                            color = HealthCompromisedTeal,
-                            startAngle = 190f,
-                            sweepAngle = 80f,
-                            useCenter = false,
-                            style = Stroke(width = strokeWidth)
-                        )
+                        if (healthReport.totalPasswords == 0) {
+                            drawArc(
+                                color = CleanBorder,
+                                startAngle = 0f,
+                                sweepAngle = 360f,
+                                useCenter = false,
+                                style = Stroke(width = strokeWidth)
+                            )
+                        } else {
+                            val safeSweep = (safeCount / total) * 360f
+                            val compromisedSweep = (oldCount / total) * 360f
+                            val riskSweep = (weakCount / total) * 360f
+                            val refusedSweep = (reusedCount / total) * 360f
+
+                            var currentAngle = -90f
+
+                            // 1. Safe (Royal Blue)
+                            if (safeSweep > 0f) {
+                                drawArc(
+                                    color = HealthSafeBlue,
+                                    startAngle = currentAngle,
+                                    sweepAngle = safeSweep,
+                                    useCenter = false,
+                                    style = Stroke(width = strokeWidth)
+                                )
+                                currentAngle += safeSweep
+                            }
+                            // 2. Compromised (Mint Teal)
+                            if (compromisedSweep > 0f) {
+                                drawArc(
+                                    color = HealthCompromisedTeal,
+                                    startAngle = currentAngle,
+                                    sweepAngle = compromisedSweep,
+                                    useCenter = false,
+                                    style = Stroke(width = strokeWidth)
+                                )
+                                currentAngle += compromisedSweep
+                            }
+                            // 3. Weak / Risk (Red)
+                            if (riskSweep > 0f) {
+                                drawArc(
+                                    color = HealthRiskRed,
+                                    startAngle = currentAngle,
+                                    sweepAngle = riskSweep,
+                                    useCenter = false,
+                                    style = Stroke(width = strokeWidth)
+                                )
+                                currentAngle += riskSweep
+                            }
+                            // 4. Refused / Reused (Yellow)
+                            if (refusedSweep > 0f) {
+                                drawArc(
+                                    color = HealthRefusedYellow,
+                                    startAngle = currentAngle,
+                                    sweepAngle = refusedSweep,
+                                    useCenter = false,
+                                    style = Stroke(width = strokeWidth)
+                                )
+                            }
+                        }
                     }
 
-                    // Donut Center Text: "94 Total score"
+                    // Donut Center Text: Total score percentage
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "${healthReport.healthScorePercent.coerceAtLeast(94)}",
+                            text = healthReport.healthScorePercent.toString(),
                             style = MaterialTheme.typography.displayMedium.copy(
                                 fontWeight = FontWeight.ExtraBold,
                                 color = TextDarkPrimary,
@@ -202,53 +225,109 @@ fun SecurityHealthScreen(
                 }
             }
 
+            // Overall Rating Card
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("overall_rating_card"),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = CleanSurface),
+                    border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(CleanBorder))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(18.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Overall Rating",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextDarkPrimary,
+                                    fontSize = 16.sp
+                                )
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Security & Encryption Grade",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = TextDarkSecondary,
+                                    fontSize = 13.sp
+                                )
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(HealthSafeBlue.copy(alpha = 0.15f))
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = healthReport.overallRating,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = HealthSafeBlue,
+                                    fontSize = 18.sp
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
             item {
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
-            // Status Breakdown Cards matching Screen 5:
-            // 1. Safe Password (4 found)
+            // Status Breakdown Cards (Fully Functional, non-demo):
             item {
-                val safeCount = (healthReport.totalPasswords - healthReport.weakCount - healthReport.reusedCount).coerceAtLeast(4)
+                val safeCount = (healthReport.totalPasswords - healthReport.weakCount - healthReport.reusedCount - healthReport.oldCount).coerceAtLeast(0)
                 HealthStatusCard(
                     title = "Safe Password",
                     count = safeCount,
                     icon = Icons.Default.Shield,
                     iconTint = HealthSafeBlue,
-                    iconBg = Color(0xFFEEF0FF)
+                    iconBg = Color(0xFFEEF0FF),
+                    onClick = onHealthCardClick
                 )
             }
 
-            // 2. Compromised Password (4 found)
             item {
                 HealthStatusCard(
                     title = "Compromised Password",
-                    count = healthReport.oldCount.coerceAtLeast(4),
+                    count = healthReport.oldCount,
                     icon = Icons.Default.LockOpen,
                     iconTint = HealthCompromisedTeal,
-                    iconBg = Color(0xFFE6FAF5)
+                    iconBg = Color(0xFFE6FAF5),
+                    onClick = onHealthCardClick
                 )
             }
 
-            // 3. Risk Password (4 found)
             item {
                 HealthStatusCard(
                     title = "Risk Password",
-                    count = healthReport.weakCount.coerceAtLeast(4),
+                    count = healthReport.weakCount,
                     icon = Icons.Default.Warning,
                     iconTint = HealthRiskRed,
-                    iconBg = Color(0xFFFEECEB)
+                    iconBg = Color(0xFFFEECEB),
+                    onClick = onHealthCardClick
                 )
             }
 
-            // 4. Refused Password (4 found)
             item {
                 HealthStatusCard(
                     title = "Refused Password",
-                    count = healthReport.reusedCount.coerceAtLeast(4),
+                    count = healthReport.reusedCount,
                     icon = Icons.Default.Lock,
                     iconTint = HealthRefusedYellow,
-                    iconBg = Color(0xFFFEF8E7)
+                    iconBg = Color(0xFFFEF8E7),
+                    onClick = onHealthCardClick
                 )
             }
 
@@ -288,12 +367,14 @@ private fun HealthStatusCard(
     count: Int,
     icon: ImageVector,
     iconTint: Color,
-    iconBg: Color
+    iconBg: Color,
+    onClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
             .testTag("health_card_${title.lowercase().replace(" ", "_")}"),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = CleanSurface),

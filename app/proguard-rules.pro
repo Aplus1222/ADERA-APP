@@ -1,21 +1,28 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Adere Secure Vault - Production ProGuard / R8 Keep Rules
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Room Database Keep Rules
+-keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Entity class * { *; }
+-keep @androidx.room.Dao interface * { *; }
+-dontwarn androidx.room.paging.**
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Domain Models & Payload Serialization (JSON / Moshi / Reflection)
+-keepclassmembers class com.example.adere.domain.model.** { *; }
+-keep class com.example.adere.domain.model.** { *; }
+-keepclassmembers class com.example.adere.data.local.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Cryptography & Security Engine
+-keepclassmembers class com.example.adere.core.crypto.** { *; }
+-keep class com.example.adere.core.crypto.** { *; }
+-keepclassmembers class com.example.adere.core.backup.** { *; }
+-keep class com.example.adere.core.backup.** { *; }
+
+# Biometric & Keystore
+-keep class androidx.biometric.** { *; }
+
+# Kotlin Coroutines & Flow
+-keepclassmembers class kotlinx.coroutines.** { *; }
+
+# Preserve line numbers and annotations for debugging
+-keepattributes SourceFile,LineNumberTable,*Annotation*
+-renamesourcefileattribute SourceFile

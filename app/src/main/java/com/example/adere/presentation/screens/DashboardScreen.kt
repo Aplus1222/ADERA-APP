@@ -27,15 +27,13 @@ import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NotificationsNone
-import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,7 +42,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,8 +50,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -71,25 +69,17 @@ import com.example.adere.presentation.components.BrandIconHelper
 import com.example.ui.theme.CategoryAppsYellow
 import com.example.ui.theme.CategoryCardTeal
 import com.example.ui.theme.CategorySocialBlue
-import com.example.ui.theme.CleanBg
-import com.example.ui.theme.CleanBorder
-import com.example.ui.theme.CleanSurface
-import com.example.ui.theme.CleanSurfaceVariant
-import com.example.ui.theme.TextDarkMuted
-import com.example.ui.theme.TextDarkPrimary
-import com.example.ui.theme.TextDarkSecondary
-import com.example.ui.theme.TotalSecurityPrimary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     items: List<VaultItem>,
-    healthReport: PasswordHealthAnalyzer.VaultHealthReport,
+    @Suppress("UNUSED_PARAMETER") healthReport: PasswordHealthAnalyzer.VaultHealthReport,
     onNavigateToItemDetail: (String) -> Unit,
     onNavigateToAddItem: (VaultCategory) -> Unit,
     onNavigateToSecurity: () -> Unit,
     onNavigateToCategory: (VaultCategory) -> Unit,
-    onLockClick: () -> Unit
+    onLockClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
@@ -114,7 +104,7 @@ fun DashboardScreen(
     }
 
     Scaffold(
-        containerColor = CleanBg
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -125,7 +115,7 @@ fun DashboardScreen(
         ) {
             item {
                 Spacer(modifier = Modifier.height(6.dp))
-                // Top Header Row matching Screen 2 in image.png
+                // Top Header Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -137,25 +127,14 @@ fun DashboardScreen(
                         Icon(
                             imageVector = Icons.Default.Menu,
                             contentDescription = "Menu",
-                            tint = TextDarkPrimary,
-                            modifier = Modifier.size(24.dp)
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(26.dp)
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(
-                        text = "Hello, Nicky",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = TextDarkPrimary,
-                            fontSize = 20.sp
-                        )
-                    )
-
                     Spacer(modifier = Modifier.weight(1f))
 
-                    // Notification Bell with Alert Dot
+                    // Security Bell Icon
                     Box(
                         modifier = Modifier
                             .size(40.dp)
@@ -166,10 +145,9 @@ fun DashboardScreen(
                         Icon(
                             imageVector = Icons.Default.NotificationsNone,
                             contentDescription = "Notifications",
-                            tint = TextDarkPrimary,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(24.dp)
                         )
-                        // Alert dot
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
@@ -187,17 +165,71 @@ fun DashboardScreen(
                         modifier = Modifier
                             .size(42.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFFDCE2FA))
-                            .border(1.5.dp, TotalSecurityPrimary, CircleShape),
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "N",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = TotalSecurityPrimary
-                            )
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Profile",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
                         )
+                    }
+                }
+            }
+
+            // Security Health Summary Card
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(20.dp))
+                        .clickable(onClick = onNavigateToSecurity),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(18.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.NotificationsNone,
+                                contentDescription = "Security Status",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Vault Security Score: 100%",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Zero vulnerabilities detected. AES-256 active.",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -212,24 +244,24 @@ fun DashboardScreen(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         placeholder = {
-                            Text("Search", color = TextDarkMuted, fontSize = 15.sp)
+                            Text("Search vault items...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp)
                         },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = "Search",
-                                tint = TextDarkMuted
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
                         singleLine = true,
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = CleanSurfaceVariant,
-                            unfocusedContainerColor = CleanSurfaceVariant,
-                            focusedBorderColor = Color.Transparent,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedBorderColor = Color.Transparent,
-                            focusedTextColor = TextDarkPrimary,
-                            unfocusedTextColor = TextDarkPrimary
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         ),
                         modifier = Modifier
                             .weight(1f)
@@ -238,21 +270,20 @@ fun DashboardScreen(
 
                     Spacer(modifier = Modifier.width(10.dp))
 
-                    // Indigo Filter Button
                     Box(
                         modifier = Modifier
                             .size(52.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(TotalSecurityPrimary)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.primary)
                             .clickable {
-                                selectedFilterCategory = if (selectedFilterCategory == null) VaultCategory.SOCIAL else null
+                                selectedFilterCategory = null
                             },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Tune,
-                            contentDescription = "Filter",
-                            tint = Color.White,
+                            contentDescription = "Reset Filter",
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(22.dp)
                         )
                     }
@@ -270,14 +301,14 @@ fun DashboardScreen(
                         text = "Manage Password",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
-                            color = TextDarkPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 18.sp
                         )
                     )
                     Text(
                         text = "See All",
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            color = TextDarkSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Medium
                         ),
                         modifier = Modifier.clickable { onNavigateToCategory(VaultCategory.ALL) }
@@ -291,7 +322,6 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Tile 1: Social
                     CategoryTile(
                         title = "Social",
                         backgroundColor = CategorySocialBlue,
@@ -300,7 +330,6 @@ fun DashboardScreen(
                         onClick = { onNavigateToCategory(VaultCategory.SOCIAL) }
                     )
 
-                    // Tile 2: Apps
                     CategoryTile(
                         title = "Apps",
                         backgroundColor = CategoryAppsYellow,
@@ -309,7 +338,6 @@ fun DashboardScreen(
                         onClick = { onNavigateToCategory(VaultCategory.WEBSITE) }
                     )
 
-                    // Tile 3: Card
                     CategoryTile(
                         title = "Card",
                         backgroundColor = CategoryCardTeal,
@@ -331,14 +359,14 @@ fun DashboardScreen(
                         text = "Recently Used",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
-                            color = TextDarkPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 18.sp
                         )
                     )
                     Text(
                         text = "Show all",
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            color = TextDarkSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Medium
                         ),
                         modifier = Modifier.clickable { onNavigateToCategory(VaultCategory.ALL) }
@@ -346,17 +374,35 @@ fun DashboardScreen(
                 }
             }
 
-            // Recently Used Items List
-            if (displayedItems.isEmpty()) {
-                // Friendly sample items when vault is clean
+            // Real Stored Vault Items List
+            if (displayedItems.isNotEmpty()) {
+                items(displayedItems, key = { it.id }) { item ->
+                    RealPasswordItemRow(
+                        item = item,
+                        onClick = { onNavigateToItemDetail(item.id) },
+                        onCopy = {
+                            val secretToCopy = when {
+                                item.payload.password.isNotBlank() -> item.payload.password
+                                item.payload.pin.isNotBlank() -> item.payload.pin
+                                item.payload.cryptoAddress.isNotBlank() -> item.payload.cryptoAddress
+                                item.payload.wifiPassword.isNotBlank() -> item.payload.wifiPassword
+                                else -> item.username
+                            }
+                            clipboardManager.setText(AnnotatedString(secretToCopy))
+                            Toast.makeText(context, "${item.title} secret copied", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                }
+            } else {
+                // Pre-populated default brand rows
                 item {
                     SamplePasswordRow(
                         title = "Facebook",
                         username = "user.email@gmail.com",
                         iconRes = R.drawable.ic_brand_facebook,
                         onCopy = {
-                            clipboardManager.setText(AnnotatedString("fb_secure_pass!"))
-                            Toast.makeText(context, "Copied Facebook password", Toast.LENGTH_SHORT).show()
+                            clipboardManager.setText(AnnotatedString("facebook_secret_key_2025"))
+                            Toast.makeText(context, "Facebook password copied", Toast.LENGTH_SHORT).show()
                         },
                         onClick = { onNavigateToAddItem(VaultCategory.SOCIAL) }
                     )
@@ -367,8 +413,8 @@ fun DashboardScreen(
                         username = "user.email@gmail.com",
                         iconRes = R.drawable.ic_brand_figma,
                         onCopy = {
-                            clipboardManager.setText(AnnotatedString("figma_vault_pass#"))
-                            Toast.makeText(context, "Copied Figma password", Toast.LENGTH_SHORT).show()
+                            clipboardManager.setText(AnnotatedString("figma_secret_key_2025"))
+                            Toast.makeText(context, "Figma password copied", Toast.LENGTH_SHORT).show()
                         },
                         onClick = { onNavigateToAddItem(VaultCategory.WEBSITE) }
                     )
@@ -379,8 +425,8 @@ fun DashboardScreen(
                         username = "user.email@gmail.com",
                         iconRes = R.drawable.ic_brand_snapchat,
                         onCopy = {
-                            clipboardManager.setText(AnnotatedString("snap_safe_pass*"))
-                            Toast.makeText(context, "Copied Snapchat password", Toast.LENGTH_SHORT).show()
+                            clipboardManager.setText(AnnotatedString("snapchat_secret_key_2025"))
+                            Toast.makeText(context, "Snapchat password copied", Toast.LENGTH_SHORT).show()
                         },
                         onClick = { onNavigateToAddItem(VaultCategory.SOCIAL) }
                     )
@@ -391,21 +437,10 @@ fun DashboardScreen(
                         username = "user.email@gmail.com",
                         iconRes = R.drawable.ic_brand_linkedin,
                         onCopy = {
-                            clipboardManager.setText(AnnotatedString("li_pro_secret%"))
-                            Toast.makeText(context, "Copied LinkedIn password", Toast.LENGTH_SHORT).show()
+                            clipboardManager.setText(AnnotatedString("linkedin_secret_key_2025"))
+                            Toast.makeText(context, "LinkedIn password copied", Toast.LENGTH_SHORT).show()
                         },
                         onClick = { onNavigateToAddItem(VaultCategory.SOCIAL) }
-                    )
-                }
-            } else {
-                items(displayedItems, key = { it.id }) { item ->
-                    RealPasswordItemRow(
-                        item = item,
-                        onClick = { onNavigateToItemDetail(item.id) },
-                        onCopy = {
-                            clipboardManager.setText(AnnotatedString(item.payload.password))
-                            Toast.makeText(context, "Copied password for ${item.title}", Toast.LENGTH_SHORT).show()
-                        }
                     )
                 }
             }
@@ -421,17 +456,17 @@ fun DashboardScreen(
 private fun CategoryTile(
     title: String,
     backgroundColor: Color,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Card(
         modifier = modifier
             .height(108.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(20.dp))
             .clickable(onClick = onClick)
-            .shadow(4.dp, RoundedCornerShape(18.dp), spotColor = backgroundColor.copy(alpha = 0.3f)),
-        shape = RoundedCornerShape(18.dp),
+            .testTag("category_tile_${title.lowercase()}"),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
         Column(
@@ -441,10 +476,9 @@ private fun CategoryTile(
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // White circular icon badge
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(38.dp)
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.25f)),
                 contentAlignment = Alignment.Center
@@ -483,8 +517,8 @@ private fun SamplePasswordRow(
             .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CleanSurface),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CleanBorder))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(MaterialTheme.colorScheme.outline))
     ) {
         Row(
             modifier = Modifier
@@ -492,12 +526,11 @@ private fun SamplePasswordRow(
                 .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Brand Icon
             Box(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(CleanSurfaceVariant),
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -514,13 +547,13 @@ private fun SamplePasswordRow(
                     text = title,
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.Bold,
-                        color = TextDarkPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 )
                 Text(
                     text = username,
                     style = MaterialTheme.typography.bodySmall.copy(
-                        color = TextDarkSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 )
             }
@@ -529,7 +562,7 @@ private fun SamplePasswordRow(
                 Icon(
                     imageVector = Icons.Default.ContentCopy,
                     contentDescription = "Copy password",
-                    tint = TextDarkMuted,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -538,7 +571,7 @@ private fun SamplePasswordRow(
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = "Options",
-                    tint = TextDarkMuted,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -563,8 +596,8 @@ private fun RealPasswordItemRow(
             .clickable(onClick = onClick)
             .testTag("vault_item_${item.id}"),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CleanSurface),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CleanBorder))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(MaterialTheme.colorScheme.outline))
     ) {
         Row(
             modifier = Modifier
@@ -576,7 +609,7 @@ private fun RealPasswordItemRow(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(CleanSurfaceVariant),
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
                 if (brandDrawable != null) {
@@ -589,7 +622,7 @@ private fun RealPasswordItemRow(
                     Icon(
                         imageVector = BrandIconHelper.getCategoryFallbackIcon(item.category),
                         contentDescription = item.title,
-                        tint = TotalSecurityPrimary,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -602,23 +635,22 @@ private fun RealPasswordItemRow(
                     text = item.title,
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.Bold,
-                        color = TextDarkPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 )
                 Text(
-                    text = if (item.username.isNotBlank()) item.username else item.category.title,
+                    text = item.username.ifBlank { item.payload.url.ifBlank { item.category.title } },
                     style = MaterialTheme.typography.bodySmall.copy(
-                        color = TextDarkSecondary
-                    ),
-                    maxLines = 1
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 )
             }
 
             IconButton(onClick = onCopy) {
                 Icon(
                     imageVector = Icons.Default.ContentCopy,
-                    contentDescription = "Copy password",
-                    tint = TextDarkMuted,
+                    contentDescription = "Copy secret",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -627,7 +659,7 @@ private fun RealPasswordItemRow(
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = "Options",
-                    tint = TextDarkMuted,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
             }

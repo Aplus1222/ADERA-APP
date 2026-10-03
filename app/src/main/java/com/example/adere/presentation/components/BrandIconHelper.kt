@@ -38,8 +38,8 @@ data class BrandInfo(
     val name: String,
     val defaultUrl: String,
     val category: VaultCategory,
-    @DrawableRes val iconRes: Int,
-    val brandColor: Color
+    @param:DrawableRes val iconRes: Int,
+    val brandColor: Color,
 )
 
 object BrandIconHelper {
@@ -61,30 +61,76 @@ object BrandIconHelper {
         BrandInfo("spotify", "Spotify", "https://spotify.com", VaultCategory.WEBSITE, R.drawable.ic_brand_spotify, Color(0xFF1ED760)),
         BrandInfo("netflix", "Netflix", "https://netflix.com", VaultCategory.WEBSITE, R.drawable.ic_brand_netflix, Color(0xFFE50914)),
         BrandInfo("github", "GitHub", "https://github.com", VaultCategory.WEBSITE, R.drawable.ic_brand_github, Color(0xFF24292F)),
-        BrandInfo("apple", "Apple ID", "https://appleid.apple.com", VaultCategory.WEBSITE, R.drawable.ic_brand_apple, Color(0xFF1E293B))
+        BrandInfo("apple", "Apple ID", "https://appleid.apple.com", VaultCategory.WEBSITE, R.drawable.ic_brand_apple, Color(0xFF1E293B)),
     )
 
     val POPULAR_CRYPTO_BRANDS = listOf(
+        BrandInfo("opensea", "OpenSea NFT Account", "https://opensea.io", VaultCategory.CRYPTO, R.drawable.ic_brand_opensea, Color(0xFF2081E2)),
+        BrandInfo("uniswap", "Uniswap Protocol", "https://app.uniswap.org", VaultCategory.CRYPTO, R.drawable.ic_brand_uniswap, Color(0xFFFF007A)),
+        BrandInfo("pancakeswap", "PancakeSwap", "https://pancakeswap.finance", VaultCategory.CRYPTO, R.drawable.ic_brand_pancakeswap, Color(0xFF1FC7D4)),
+        BrandInfo("aave", "Aave DeFi Account", "https://app.aave.com", VaultCategory.CRYPTO, R.drawable.ic_brand_aave, Color(0xFFB6509E)),
+        BrandInfo("lido", "Lido Staking", "https://lido.fi", VaultCategory.CRYPTO, R.drawable.ic_brand_lido, Color(0xFF00A3FF)),
+        BrandInfo("metamask", "MetaMask Wallet", "https://metamask.io", VaultCategory.CRYPTO, R.drawable.ic_brand_metamask, Color(0xFFE2761B)),
+        BrandInfo("phantom", "Phantom Wallet", "https://phantom.app", VaultCategory.CRYPTO, R.drawable.ic_brand_phantom, Color(0xFFAB9FF2)),
+        BrandInfo("keplr", "Keplr Cosmos Wallet", "https://keplr.app", VaultCategory.CRYPTO, R.drawable.ic_brand_keplr, Color(0xFF1B1E36)),
+        BrandInfo("rabby", "Rabby Web3 Wallet", "https://rabby.io", VaultCategory.CRYPTO, R.drawable.ic_brand_rabby, Color(0xFF8697FF)),
+        BrandInfo("rainbow", "Rainbow Web3 Wallet", "https://rainbow.me", VaultCategory.CRYPTO, R.drawable.ic_brand_rainbow, Color(0xFF111111)),
+        BrandInfo("safe", "Safe (Gnosis) Multi-Sig", "https://safe.global", VaultCategory.CRYPTO, R.drawable.ic_brand_safe, Color(0xFF12FF80)),
+        BrandInfo("zerion", "Zerion Web3 Portfolio", "https://zerion.io", VaultCategory.CRYPTO, R.drawable.ic_brand_zerion, Color(0xFF2962FF)),
+        BrandInfo("magiceden", "Magic Eden NFT", "https://magiceden.io", VaultCategory.CRYPTO, R.drawable.ic_brand_magiceden, Color(0xFFE32381)),
+        BrandInfo("solflare", "Solflare Solana Wallet", "https://solflare.com", VaultCategory.CRYPTO, R.drawable.ic_brand_solflare, Color(0xFFFC8802)),
+        BrandInfo("coinbasewallet", "Coinbase Web3 Wallet", "https://coinbase.com/wallet", VaultCategory.CRYPTO, R.drawable.ic_brand_coinbasewallet, Color(0xFF0052FF)),
+        BrandInfo("binance", "Binance Exchange", "https://binance.com", VaultCategory.CRYPTO, R.drawable.ic_brand_binance, Color(0xFFF3BA2F)),
+        BrandInfo("coinbase", "Coinbase Exchange", "https://coinbase.com", VaultCategory.CRYPTO, R.drawable.ic_brand_coinbase, Color(0xFF0052FF)),
+        BrandInfo("kraken", "Kraken Exchange", "https://kraken.com", VaultCategory.CRYPTO, R.drawable.ic_brand_kraken, Color(0xFF5741D9)),
+        BrandInfo("kucoin", "KuCoin Exchange", "https://kucoin.com", VaultCategory.CRYPTO, R.drawable.ic_brand_kucoin, Color(0xFF24AF82)),
+        BrandInfo("bybit", "Bybit Exchange", "https://bybit.com", VaultCategory.CRYPTO, R.drawable.ic_brand_bybit, Color(0xFFF7A600)),
+        BrandInfo("okx", "OKX Exchange", "https://okx.com", VaultCategory.CRYPTO, R.drawable.ic_brand_okx, Color(0xFF000000)),
+        BrandInfo("cryptocom", "Crypto.com App", "https://crypto.com", VaultCategory.CRYPTO, R.drawable.ic_brand_cryptocom, Color(0xFF002D72)),
+        BrandInfo("trustwallet", "Trust Wallet", "https://trustwallet.com", VaultCategory.CRYPTO, R.drawable.ic_brand_trustwallet, Color(0xFF3375BB)),
+        BrandInfo("robinhood", "Robinhood Crypto", "https://robinhood.com", VaultCategory.CRYPTO, R.drawable.ic_brand_robinhood, Color(0xFF00C805)),
+        BrandInfo("ledger", "Ledger Live", "https://ledger.com", VaultCategory.CRYPTO, R.drawable.ic_brand_ledger, Color(0xFF101010)),
         BrandInfo("bitcoin", "Bitcoin Wallet", "https://bitcoin.org", VaultCategory.CRYPTO, R.drawable.ic_brand_bitcoin, Color(0xFFF7931A)),
         BrandInfo("ethereum", "Ethereum Wallet", "https://ethereum.org", VaultCategory.CRYPTO, R.drawable.ic_brand_ethereum, Color(0xFF627EEA)),
-        BrandInfo("metamask", "MetaMask Wallet", "https://metamask.io", VaultCategory.CRYPTO, R.drawable.ic_brand_metamask, Color(0xFFE2761B)),
-        BrandInfo("binance", "Binance Account", "https://binance.com", VaultCategory.CRYPTO, R.drawable.ic_brand_binance, Color(0xFFF3BA2F)),
-        BrandInfo("seed_phrase", "12/24-Word Seed Phrase", "https://ethereum.org", VaultCategory.CRYPTO, R.drawable.ic_brand_ethereum, Color(0xFF10B981))
+        BrandInfo("seed_phrase", "12/24-Word Seed Phrase", "https://ethereum.org", VaultCategory.CRYPTO, R.drawable.ic_brand_ethereum, Color(0xFF10B981)),
     )
 
     val POPULAR_EMAIL_BRANDS = listOf(
         BrandInfo("gmail", "Gmail / Google Account", "https://accounts.google.com", VaultCategory.EMAIL, R.drawable.ic_brand_google, Color(0xFF4285F4)),
         BrandInfo("outlook", "Outlook / Microsoft", "https://outlook.live.com", VaultCategory.EMAIL, R.drawable.ic_brand_google, Color(0xFF0078D4)),
-        BrandInfo("apple_id", "iCloud / Apple ID", "https://appleid.apple.com", VaultCategory.EMAIL, R.drawable.ic_brand_apple, Color(0xFF1E293B))
+        BrandInfo("apple_id", "iCloud / Apple ID", "https://appleid.apple.com", VaultCategory.EMAIL, R.drawable.ic_brand_apple, Color(0xFF1E293B)),
     )
 
     fun resolveBrandDrawable(title: String, url: String? = null): Int? {
         val query = (title + " " + (url ?: "")).lowercase().trim()
         return when {
+            query.contains("opensea") -> R.drawable.ic_brand_opensea
+            query.contains("uniswap") -> R.drawable.ic_brand_uniswap
+            query.contains("pancakeswap") || query.contains("pancake") -> R.drawable.ic_brand_pancakeswap
+            query.contains("aave") -> R.drawable.ic_brand_aave
+            query.contains("lido") -> R.drawable.ic_brand_lido
+            query.contains("keplr") -> R.drawable.ic_brand_keplr
+            query.contains("rabby") -> R.drawable.ic_brand_rabby
+            query.contains("rainbow") -> R.drawable.ic_brand_rainbow
+            query.contains("safe") || query.contains("gnosis") -> R.drawable.ic_brand_safe
+            query.contains("zerion") -> R.drawable.ic_brand_zerion
+            query.contains("magiceden") || query.contains("magic eden") -> R.drawable.ic_brand_magiceden
+            query.contains("solflare") -> R.drawable.ic_brand_solflare
+            query.contains("binance") || query.contains("bnb") -> R.drawable.ic_brand_binance
+            query.contains("coinbase wallet") -> R.drawable.ic_brand_coinbasewallet
+            query.contains("coinbase") -> R.drawable.ic_brand_coinbase
+            query.contains("kraken") -> R.drawable.ic_brand_kraken
+            query.contains("kucoin") -> R.drawable.ic_brand_kucoin
+            query.contains("bybit") -> R.drawable.ic_brand_bybit
+            query.contains("okx") -> R.drawable.ic_brand_okx
+            query.contains("crypto.com") || query.contains("cryptocom") -> R.drawable.ic_brand_cryptocom
+            query.contains("trust") || query.contains("trustwallet") -> R.drawable.ic_brand_trustwallet
+            query.contains("phantom") -> R.drawable.ic_brand_phantom
+            query.contains("robinhood") -> R.drawable.ic_brand_robinhood
+            query.contains("ledger") -> R.drawable.ic_brand_ledger
             query.contains("bitcoin") || query.contains("btc") -> R.drawable.ic_brand_bitcoin
             query.contains("ethereum") || query.contains("eth") -> R.drawable.ic_brand_ethereum
             query.contains("metamask") -> R.drawable.ic_brand_metamask
-            query.contains("binance") || query.contains("bnb") -> R.drawable.ic_brand_binance
             query.contains("instagram") || query.contains("insta") -> R.drawable.ic_brand_instagram
             query.contains("facebook") || query.contains("fb.com") -> R.drawable.ic_brand_facebook
             query.contains("twitter") || query.contains("x.com") || query.contains("x (twitter") -> R.drawable.ic_brand_x_twitter
@@ -124,7 +170,7 @@ object BrandIconHelper {
 }
 
 /**
- * Renders the real brand logo if matching a known brand (Instagram, Facebook, TikTok, etc.),
+ * Renders the real brand logo if matching a known brand (OpenSea, Uniswap, MetaMask, Phantom, etc.),
  * or falls back to the clean category-specific vector icon.
  */
 @Composable
@@ -135,7 +181,7 @@ fun VaultItemAvatar(
     size: Dp = 42.dp,
     iconSize: Dp = 22.dp,
     cornerRadius: Dp = 10.dp,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val brandDrawable = BrandIconHelper.resolveBrandDrawable(title, url)
     if (brandDrawable != null) {
